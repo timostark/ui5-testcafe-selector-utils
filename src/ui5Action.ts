@@ -150,68 +150,21 @@ class ui5ActionDef {
         this.executionChain = Promise.resolve();
     }
 
-    _createExtendedPromise(promise: any) {
-        const extendedPromise = promise.then();
-
-        extendedPromise.then = function () {
-            return originalThen.apply(this, arguments);
-        };
-
-        this._delegateAPIToPromise(this, extendedPromise);
-
-        return extendedPromise;
-    }
-
-    _enqueueTask(createTaskExecutor: any) {
-        const executor = createTaskExecutor();
-
-        this.executionChain.then = originalThen;
-        this.executionChain = this.executionChain.then(executor);
-        this.executionChain = this._createExtendedPromise(this.executionChain);
-
-        return this.executionChain;
-    }
-
-    public typeText(t: TestController, selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
-        let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
-            return (): Promise<any> => {
-                //now execute action
-                return new Promise((resolve, reject) => {
-                    let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
-                    t.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options).then(function () {
-                        ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
-                        resolve();
-                    }, function () {
-                        ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
-                        reject();
-                    });
-                });
-            };
+    public typeText(selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options);
+        oProm = this._delegateAPIToPromise(this, oProm);
+        oProm.then(function () { //dmmy..
         });
 
-        return oProm;
+        return <any>oProm;
     }
 
-    public click(t: TestController, selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
-        let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
-            return (): Promise<any> => {
-                //now execute action
-                return new Promise((resolve, reject) => {
-                    let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
-
-                    t.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options).then(function () {
-                        ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
-                        resolve();
-                    }, function () {
-                        ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
-                        reject();
-                    });
-                });
-
-            };
+    public click(selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options);
+        oProm = this._delegateAPIToPromise(this, oProm);
+        oProm.then(function () { //dmmy..
         });
-
-        return oProm;
+        return <any>oProm;
     }
 
     private _delegateAPIToPromise(_handler: any, dest: any) {

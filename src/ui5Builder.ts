@@ -7,20 +7,28 @@ import {
 } from "ui5-testcafe-selector";
 import { ui5ActionDef } from "./ui5Action";
 
-export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> {
+export abstract class UI5BaseBuilderIntf {
+    public _id: any;
+    public _domQuery: string = "";
+    public _name: string = "";
 
-    protected thisPointer: B;
-    protected _id: any;
-    protected _domQuery: string;
-    protected _name: string = "";
 
+    abstract format(): string;
+    abstract build(): Selector;
+};
+
+export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
 
+    protected thisPointer: B;
+
     constructor(chain?: any) {
+        super();
+
         this.thisPointer = this.getThisPointer();
         this._id = {};
 
-        if (chain && chain instanceof UI5BaseBuilder) {
+        if (chain && chain instanceof UI5BaseBuilderIntf) {
             this._id = chain._id;
             this._name = chain._name;
         } else if (chain && typeof chain == "string") {
@@ -206,7 +214,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> {
     /** helpers.. */
     build(): Selector {
         if (this._domQuery) {
-            return Selector(this._domQuery, { boundTestRun: ui5ActionDef.currentTestRun });
+            return Selector(this._domQuery);
         }
 
         return UI5Selector(this._id);
