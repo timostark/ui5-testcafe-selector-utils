@@ -27,6 +27,7 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
             this._name = chain;
         }
 
+        this._descr = "";
         this._domQuery = chain ? chain._domQuery : null;
     }
 
@@ -191,7 +192,6 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
         this._name = id;
         return this.thisPointer;
     }
-
 
     format(): string {
         let sName = this._name + " ( " + JSON.stringify(this._id) + " )";

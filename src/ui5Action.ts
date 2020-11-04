@@ -46,10 +46,12 @@ class ui5StepsDef {
     _startTime: number = 0;
 
     getCurrentTestName(): string {
-        let sTestName = (<any>t).testRun.test.name;
-        let sFixName = (<any>t).testRun.test.testFile.currentFixture.name;
-
-        return sTestName + sFixName;
+        if (t.ctx && t.ctx.testCase) {
+            return t.ctx.testCase;
+        } else if (t.ctx && t.ctx.name) {
+            return t.ctx.name;
+        }
+        return "";
     }
 
     getStatusDescr(status: ui5StepStatus): string {
@@ -92,10 +94,10 @@ class ui5StepsDef {
     }
 
     addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5ChainSelection, activity?: string): ui5ActionStep {
-        let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, selector.format(), process.uptime() - this._startTime, activity);
+        let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, selector.format(), this._startTime, activity);
         this.getCurSteps().push(step);
 
-        let sText = "Step " + step.stepId + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
+        let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
         if (activity) {
             sText += ", " + activity;
         }
@@ -112,9 +114,9 @@ class ui5StepsDef {
         }
 
         step.status = stat;
-        step.endTime = process.uptime() - step.startTime;
+        step.endTime = process.uptime();
 
-        let sText = "Step " + step.stepId + " changed status to " + this.getStatusDescr(step.status) + " within " + (step.endTime - step.startTime) + "s";
+        let sText = "Step " + step.stepId + ": Changed status to " + this.getStatusDescr(step.status) + " within " + (step.endTime - step.startTime) + "s";
         if (stat == ui5StepStatus.FAILED) {
             sText = colors.red(sText);
         } else if (stat == ui5StepStatus.FAILED_UNPROCESSED) {
