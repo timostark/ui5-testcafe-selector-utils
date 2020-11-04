@@ -18,12 +18,13 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
 
     constructor(chain?: any) {
         this.thisPointer = this.getThisPointer();
+        this._id = {};
+
         if (chain && chain instanceof Ui5BaseBuilder) {
             this._id = chain._id;
             this._name = chain._name;
         } else if (chain && typeof chain == "string") {
             this._name = chain;
-            this._id = {};
         }
 
         this._domQuery = chain ? chain._domQuery : null;
