@@ -1,0 +1,26 @@
+{
+  "name": "ui5-testcafe-selector-utils",
+  "version": "1.0.0",
+  "description": "Test-Cafe selector Utils",
+  "main": "index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timostark/ui5-testcafe-selector-utils.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/timostark/ui5-testcafe-selector-utils/issues"
+  },
+  "homepage": "https://github.com/timostark/ui5-testcafe-selector-utils#readme",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "testcafe": "^1.9.4",
+    "ui5-testcafe-selector": "^0.3.98"
+  }
+}
