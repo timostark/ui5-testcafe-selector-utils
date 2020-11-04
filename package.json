@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Test-Cafe selector Utils",
   "main": "index.js",
   "types": "dist/index.d.ts",
