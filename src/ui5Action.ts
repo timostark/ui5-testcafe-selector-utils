@@ -141,20 +141,15 @@ class ui5ActionDef {
     public typeText(selector: UI5ChainSelection, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
         let oRes: any;
 
-        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector);
+        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
 
         oRes = t.typeText(selector.build(), text, options);
 
         oRes.then(() => {
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
-            console.log(colors.green('succeeded: type-text: ') + selector.format() + ":" + text);
-
-            oAction.status = ui5StepStatus.PROCESSED;
-
             return true;
         }, () => {
-            ui5ActionDef.setStepStatus(oAction, ui5StepStatus.FAILED);
-            console.log(colors.red('failed: type-text: ') + selector.format() + ":" + text);
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
             return true;
         });
 
@@ -164,13 +159,14 @@ class ui5ActionDef {
 
     public click(selector: UI5ChainSelection, options?: ClickActionOptions): ui5ActionDefPromise {
         let oRes: any;
-        console.log(colors.gray('queued: click:') + selector.format());
+        let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
+
         oRes = t.click(selector.build(), options);
         oRes.then(() => {
-            console.log(colors.green('succeeded: click') + selector.format());
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
             return true;
         }, () => {
-            console.log(colors.red('failed: click') + selector.format());
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
             return true;
         });
 
@@ -178,7 +174,7 @@ class ui5ActionDef {
         return oRes;
     }
 
-    _delegateAPIToPromise(_handler: any, dest: any) {
+    private _delegateAPIToPromise(_handler: any, dest: any) {
         ["click", "typeText"].forEach((srcProp) => {
             const fn = function (...args: any[]) {
                 return _handler[srcProp](...args);
