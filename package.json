@@ -1,11 +1,15 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "description": "Test-Cafe selector Utils",
-  "main": "index.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "tsc",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -22,5 +26,10 @@
     "colors": "^1.4.0",
     "testcafe": "^1.9.4",
     "ui5-testcafe-selector": "^0.3.98"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.6",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
   }
 }
