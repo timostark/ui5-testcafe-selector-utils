@@ -5,6 +5,7 @@ import {
 import {
     UI5Selector
 } from "ui5-testcafe-selector";
+import { ui5ActionDef } from "./ui5Action";
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> {
 
@@ -197,33 +198,15 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> {
 
 
     /** actions */
-    async click(): Promise<any> {
-        await t.click(this.build());
-    }
-
-    async typeText(text: string, bConfirm?: boolean): Promise<any> {
-        await t.typeText(this.build(), text);
-        if (bConfirm === true) {
-            await t.pressKey("enter");
-        }
-    }
-
     async data(): Promise<UI5SelectorDef> {
         const data = await this.build().getUI5();
         return data;
     }
 
-    /** expects.. */
-    async expectVisible(msg: string, timeout: number): Promise<any> {
-        await t.expect(this.build().visible).ok(msg, timeout ? {
-            timeout: timeout
-        } : {});
-    }
-
     /** helpers.. */
     build(): Selector {
         if (this._domQuery) {
-            return Selector(this._domQuery);
+            return Selector(this._domQuery, { boundTestRun: ui5ActionDef.currentTestRun });
         }
 
         return UI5Selector(this._id);
@@ -269,14 +252,6 @@ export class UI5ComboBoxChainSelection extends UI5BaseBuilder<UI5ComboBoxChainSe
     item(key: string): UI5CoreItemSelection {
         //merge own attributes and set as parent (to be improved)
         return ui5().parentId(this._id.identifier.id).coreItem().key(key);
-    }
-
-    async selectItem(key: string) {
-        await t.click(ui5(this).domChildWith("-arrow").build());
-
-        const elem: any = await this.data(); //we could use that for a parent identifier..i guess it was level 4
-        const itemIdSelector = ui5().parentId(elem.identifier.ui5LocalId).element("sap.ui.core.Item").property("key", key).build();
-        await t.click(itemIdSelector);
     }
 }
 

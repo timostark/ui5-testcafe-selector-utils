@@ -172,13 +172,13 @@ class ui5ActionDef {
         return this.executionChain;
     }
 
-    public typeText(selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+    public typeText(t: TestController, selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
         let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
             return (): Promise<any> => {
                 //now execute action
                 return new Promise((resolve, reject) => {
                     let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
-                    ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options).then(function () {
+                    t.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options).then(function () {
                         ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
                         resolve();
                     }, function () {
@@ -192,14 +192,14 @@ class ui5ActionDef {
         return oProm;
     }
 
-    public click(selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+    public click(t: TestController, selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
             return (): Promise<any> => {
                 //now execute action
                 return new Promise((resolve, reject) => {
                     let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
-                    ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options).then(function () {
+                    t.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options).then(function () {
                         ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
                         resolve();
                     }, function () {
