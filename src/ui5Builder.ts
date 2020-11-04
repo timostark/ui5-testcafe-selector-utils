@@ -26,8 +26,6 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
         } else if (chain && typeof chain == "string") {
             this._name = chain;
         }
-
-        this._descr = "";
         this._domQuery = chain ? chain._domQuery : null;
     }
 
