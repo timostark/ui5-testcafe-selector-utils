@@ -6,8 +6,7 @@ import {
     UI5Selector
 } from "ui5-testcafe-selector";
 
-
-abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
+export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> {
 
     protected thisPointer: B;
     protected _id: any;
@@ -20,7 +19,7 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
         this.thisPointer = this.getThisPointer();
         this._id = {};
 
-        if (chain && chain instanceof Ui5BaseBuilder) {
+        if (chain && chain instanceof UI5BaseBuilder) {
             this._id = chain._id;
             this._name = chain._name;
         } else if (chain && typeof chain == "string") {
@@ -241,14 +240,14 @@ abstract class Ui5BaseBuilder<B extends Ui5BaseBuilder<B>>  {
     }
 }
 
-export class UI5ChainSelection extends Ui5BaseBuilder<UI5ChainSelection> {
+export class UI5ChainSelection extends UI5BaseBuilder<UI5ChainSelection> {
     getThisPointer(): UI5ChainSelection {
         return this;
     }
 }
 
 
-export class UI5CoreItemSelection extends Ui5BaseBuilder<UI5CoreItemSelection> {
+export class UI5CoreItemSelection extends UI5BaseBuilder<UI5CoreItemSelection> {
     getThisPointer(): UI5CoreItemSelection {
         return this;
     }
@@ -258,7 +257,7 @@ export class UI5CoreItemSelection extends Ui5BaseBuilder<UI5CoreItemSelection> {
     }
 }
 
-export class UI5ComboBoxChainSelection extends Ui5BaseBuilder<UI5ComboBoxChainSelection> {
+export class UI5ComboBoxChainSelection extends UI5BaseBuilder<UI5ComboBoxChainSelection> {
     getThisPointer(): UI5ComboBoxChainSelection {
         return this;
     }
@@ -281,13 +280,13 @@ export class UI5ComboBoxChainSelection extends Ui5BaseBuilder<UI5ComboBoxChainSe
     }
 }
 
-export class UI5ListChainSelection extends Ui5BaseBuilder<UI5ListChainSelection> {
+export class UI5ListChainSelection extends UI5BaseBuilder<UI5ListChainSelection> {
     getThisPointer(): UI5ListChainSelection {
         return this;
     }
 }
 
-export class UI5TableRowChainSelection extends Ui5BaseBuilder<UI5TableRowChainSelection> {
+export class UI5TableRowChainSelection extends UI5BaseBuilder<UI5TableRowChainSelection> {
     getThisPointer(): UI5TableRowChainSelection {
         return this;
     }
@@ -297,7 +296,7 @@ export class UI5TableRowChainSelection extends Ui5BaseBuilder<UI5TableRowChainSe
     }
 }
 
-export class UI5ObjectAttributeSelection extends Ui5BaseBuilder<UI5ObjectAttributeSelection> {
+export class UI5ObjectAttributeSelection extends UI5BaseBuilder<UI5ObjectAttributeSelection> {
     getThisPointer(): UI5ObjectAttributeSelection {
         return this;
     }

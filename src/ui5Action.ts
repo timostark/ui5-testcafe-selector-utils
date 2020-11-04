@@ -1,7 +1,7 @@
 
 var colors = require('colors/safe');
 import { t } from "testcafe";
-import { UI5ChainSelection } from "./ui5Builder";
+import { UI5ChainSelection, UI5BaseBuilder } from "./ui5Builder";
 
 enum ui5StepType {
     UNDEFINED = 0,
@@ -93,8 +93,8 @@ class ui5StepsDef {
         return this._steps[this.getCurrentTestName()];
     }
 
-    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5ChainSelection | Selector, activity?: string): ui5ActionStep {
-        var sFormat = selector instanceof UI5ChainSelection ? selector.format() : "Selector";
+    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5BaseBuilder<any> | Selector, activity?: string): ui5ActionStep {
+        var sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
 
         let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, sFormat, process.uptime(), activity);
         this.getCurSteps().push(step);
@@ -172,13 +172,13 @@ class ui5ActionDef {
         return this.executionChain;
     }
 
-    public typeText(selector: UI5ChainSelection | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+    public typeText(selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
         let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
             return (): Promise<any> => {
                 //now execute action
                 return new Promise((resolve, reject) => {
                     let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
-                    ui5ActionDef.currentTestRun.typeText(selector instanceof UI5ChainSelection ? selector.build() : selector, text, options).then(function () {
+                    ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options).then(function () {
                         ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
                         resolve();
                     }, function () {
@@ -192,14 +192,14 @@ class ui5ActionDef {
         return oProm;
     }
 
-    public click(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+    public click(selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
             return (): Promise<any> => {
                 //now execute action
                 return new Promise((resolve, reject) => {
                     let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
-                    ui5ActionDef.currentTestRun.click(selector instanceof UI5ChainSelection ? selector.build() : selector, options).then(function () {
+                    ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options).then(function () {
                         ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
                         resolve();
                     }, function () {
