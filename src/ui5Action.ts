@@ -46,10 +46,10 @@ class ui5StepsDef {
     _startTime: number = 0;
 
     getCurrentTestName(): string {
-        if (t.ctx && t.ctx.testCase) {
-            return t.ctx.testCase;
-        } else if (t.ctx && t.ctx.name) {
-            return t.ctx.name;
+        if (ui5ActionDef.currentTestRun.ctx && ui5ActionDef.currentTestRun.ctx.testCase) {
+            return ui5ActionDef.currentTestRun.ctx.testCase;
+        } else if (ui5ActionDef.currentTestRun.ctx && ui5ActionDef.currentTestRun.ctx.name) {
+            return ui5ActionDef.currentTestRun.ctx.name;
         }
         return "";
     }
@@ -93,15 +93,17 @@ class ui5StepsDef {
         return this._steps[this.getCurrentTestName()];
     }
 
-    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5ChainSelection, activity?: string): ui5ActionStep {
-        let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, selector.format(), this._startTime, activity);
+    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5ChainSelection | Selector, activity?: string): ui5ActionStep {
+        var sFormat = selector instanceof UI5ChainSelection ? selector.format() : "Selector";
+
+        let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, sFormat, process.uptime(), activity);
         this.getCurSteps().push(step);
 
         let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
         if (activity) {
             sText += ", " + activity;
         }
-        sText += ") for element " + selector.format();
+        sText += ") for element " + sFormat;
 
         console.log(sText);
 
@@ -116,11 +118,15 @@ class ui5StepsDef {
         step.status = stat;
         step.endTime = process.uptime();
 
-        let sText = "Step " + step.stepId + ": Changed status to " + this.getStatusDescr(step.status) + " within " + (step.endTime - step.startTime) + "s";
+        var sTime = Math.round(((step.endTime - step.startTime) + Number.EPSILON) * 100) / 100;
+
+        let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " within " + sTime + "s";
         if (stat == ui5StepStatus.FAILED) {
             sText = colors.red(sText);
         } else if (stat == ui5StepStatus.FAILED_UNPROCESSED) {
             sText = colors.orange(sText);
+        } else if (stat == ui5StepStatus.PROCESSED) {
+            sText = colors.green(sText);
         }
 
         console.log(sText);
@@ -132,48 +138,80 @@ class ui5StepsDef {
 }
 
 let ui5Steps = new ui5StepsDef();
+let originalThen: any;
+originalThen = Promise.resolve().then;
 
 class ui5ActionDef {
 
+    public static currentTestRun: TestController;
+    executionChain: Promise<any>;
+
     constructor() {
+        this.executionChain = Promise.resolve();
     }
 
+    _createExtendedPromise(promise: any) {
+        const extendedPromise = promise.then();
 
+        extendedPromise.then = function () {
+            return originalThen.apply(this, arguments);
+        };
 
-    public typeText(selector: UI5ChainSelection, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
-        let oRes: any;
+        this._delegateAPIToPromise(this, extendedPromise);
 
-        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
-
-        oRes = t.typeText(selector.build(), text, options);
-
-        oRes.then(() => {
-            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
-            return true;
-        }, () => {
-            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
-            return true;
-        });
-
-        oRes = this._delegateAPIToPromise(this, oRes);
-        return oRes;
+        return extendedPromise;
     }
 
-    public click(selector: UI5ChainSelection, options?: ClickActionOptions): ui5ActionDefPromise {
-        let oRes: any;
-        let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
+    _enqueueTask(createTaskExecutor: any) {
+        const executor = createTaskExecutor();
 
-        oRes = t.click(selector.build(), options);
-        oRes.then(() => {
-            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
-            return true;
-        }, () => {
-            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
-            return true;
+        this.executionChain.then = originalThen;
+        this.executionChain = this.executionChain.then(executor);
+        this.executionChain = this._createExtendedPromise(this.executionChain);
+
+        return this.executionChain;
+    }
+
+    public typeText(selector: UI5ChainSelection | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+        let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
+            return (): Promise<any> => {
+                //now execute action
+                return new Promise((resolve, reject) => {
+                    let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
+                    ui5ActionDef.currentTestRun.typeText(selector instanceof UI5ChainSelection ? selector.build() : selector, text, options).then(function () {
+                        ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+                        resolve();
+                    }, function () {
+                        ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+                        reject();
+                    });
+                });
+            };
         });
 
-        oRes = this._delegateAPIToPromise(this, oRes);
-        return oRes;
+        return oProm;
+    }
+
+    public click(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+        let oProm = <ui5ActionDefPromise>this._enqueueTask(() => {
+            return (): Promise<any> => {
+                //now execute action
+                return new Promise((resolve, reject) => {
+                    let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
+
+                    ui5ActionDef.currentTestRun.click(selector instanceof UI5ChainSelection ? selector.build() : selector, options).then(function () {
+                        ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+                        resolve();
+                    }, function () {
+                        ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+                        reject();
+                    });
+                });
+
+            };
+        });
+
+        return oProm;
     }
 
     private _delegateAPIToPromise(_handler: any, dest: any) {
@@ -191,4 +229,4 @@ interface ui5ActionDefPromise extends ui5ActionDef, Promise<any> {
 }
 
 let ui5Action = new ui5ActionDef();
-export { ui5Action, ui5ActionStep };
+export { ui5Action, ui5ActionStep, ui5ActionDef };
