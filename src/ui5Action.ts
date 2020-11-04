@@ -1,7 +1,7 @@
 
 var colors = require('colors/safe');
 import { t } from "testcafe";
-import { UI5ChainSelection, UI5BaseBuilder } from "./ui5Builder";
+import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
 enum ui5StepType {
     UNDEFINED = 0,
@@ -150,8 +150,8 @@ class ui5ActionDef {
         this.executionChain = Promise.resolve();
     }
 
-    public typeText(selector: UI5BaseBuilder<any> | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
-        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilder ? selector.build() : selector, text, options);
+    public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
         });
@@ -159,8 +159,8 @@ class ui5ActionDef {
         return <any>oProm;
     }
 
-    public click(selector: UI5BaseBuilder<any> | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
-        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilder ? selector.build() : selector, options);
+    public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
         });
