@@ -115,6 +115,8 @@ class ui5StepsDef {
             stat = ui5StepStatus.FAILED_UNPROCESSED;
         }
 
+        let oLastTest = this.getCurSteps().find(e => { return e.stepId === step.stepId - 1 });
+        step.startTime = oLastTest ? oLastTest.endTime : step.startTime;
         step.status = stat;
         step.endTime = process.uptime();
 
