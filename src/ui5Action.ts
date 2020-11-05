@@ -6,7 +6,8 @@ import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Buil
 enum ui5StepType {
     UNDEFINED = 0,
     CLICK = 1,
-    TYPE_TEXT = 2
+    TYPE_TEXT = 2,
+    ASSERT_VISIBLE = 3
 };
 
 enum ui5StepStatus {
@@ -75,6 +76,8 @@ class ui5StepsDef {
                 return "Click";
             case ui5StepType.TYPE_TEXT:
                 return "Type-Text";
+            case ui5StepType.ASSERT_VISIBLE:
+                return "Asserts Visiblity";
             default:
                 return "";
         }
@@ -140,16 +143,12 @@ class ui5StepsDef {
 }
 
 let ui5Steps = new ui5StepsDef();
-let originalThen: any;
-originalThen = Promise.resolve().then;
 
 class ui5ActionDef {
 
     public static currentTestRun: TestController;
-    executionChain: Promise<any>;
 
     constructor() {
-        this.executionChain = Promise.resolve();
     }
 
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
@@ -194,4 +193,4 @@ interface ui5ActionDefPromise extends ui5ActionDef, Promise<any> {
 }
 
 let ui5Action = new ui5ActionDef();
-export { ui5Action, ui5ActionStep, ui5ActionDef };
+export { ui5Action, ui5ActionStep, ui5ActionDef, ui5Steps, ui5StepType, ui5StepStatus };
