@@ -7,7 +7,8 @@ enum ui5StepType {
     UNDEFINED = 0,
     CLICK = 1,
     TYPE_TEXT = 2,
-    ASSERT_VISIBLE = 3
+    ASSERT_VISIBLE = 3,
+    PRESS_KEY = 4
 };
 
 enum ui5StepStatus {
@@ -78,6 +79,8 @@ class ui5StepsDef {
                 return "Type-Text";
             case ui5StepType.ASSERT_VISIBLE:
                 return "Asserts Visiblity";
+            case ui5StepType.PRESS_KEY:
+                return "Asserts Visiblity";
             default:
                 return "";
         }
@@ -96,8 +99,11 @@ class ui5StepsDef {
         return this._steps[this.getCurrentTestName()];
     }
 
-    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
-        var sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
+    addStep(stepType: ui5StepType, status: ui5StepStatus, selector?: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
+        var sFormat = "";
+        if (selector) {
+            sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
+        }
 
         let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, sFormat, process.uptime(), activity);
         this.getCurSteps().push(step);
@@ -178,8 +184,22 @@ class ui5ActionDef {
         return <any>oProm;
     }
 
+
+    public pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.PRESS_KEY, ui5StepStatus.QUEUED, undefined, keys);
+
+        var oProm = ui5ActionDef.currentTestRun.pressKey(keys, options);
+        oProm = this._delegateAPIToPromise(this, oProm);
+        oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+        });
+        return <any>oProm;
+    }
+
     private _delegateAPIToPromise(_handler: any, dest: any) {
-        ["click", "typeText"].forEach((srcProp) => {
+        ["click", "typeText", "pressKey"].forEach((srcProp) => {
             const fn = function (...args: any[]) {
                 return _handler[srcProp](...args);
             };
