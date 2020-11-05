@@ -93,7 +93,7 @@ class ui5StepsDef {
         return this._steps[this.getCurrentTestName()];
     }
 
-    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5BaseBuilder<any> | Selector, activity?: string): ui5ActionStep {
+    addStep(stepType: ui5StepType, status: ui5StepStatus, selector: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
         var sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
 
         let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, sFormat, process.uptime(), activity);
@@ -151,18 +151,28 @@ class ui5ActionDef {
     }
 
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
+
         let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
         });
 
         return <any>oProm;
     }
 
     public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector);
+
         var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
         });
         return <any>oProm;
     }
