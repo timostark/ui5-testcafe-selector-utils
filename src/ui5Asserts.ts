@@ -2,10 +2,10 @@ import { ui5ActionDef, ui5Steps, ui5StepType, ui5StepStatus } from "./ui5Action"
 import { UI5BaseBuilderIntf } from "./ui5Builder";
 
 class ui5AssertDef {
-    async expectVisible(selector: UI5BaseBuilderIntf | Selector) {
+    async expectVisible(selector: UI5BaseBuilderIntf | Selector, message?: string, options?: AssertionOptions) {
         let oStep = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector);
         let oSel = selector instanceof UI5BaseBuilderIntf ? selector.build() : selector;
-        await ui5ActionDef.currentTestRun.expect(oSel.visible).ok();
+        await ui5ActionDef.currentTestRun.expect(oSel.visible).ok(message, options);
         ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
     }
 }
