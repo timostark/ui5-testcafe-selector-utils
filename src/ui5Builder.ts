@@ -90,6 +90,17 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
+    itemdata(itemPropertyName: string, itemPropertyValue: any): B {
+        var oPath: any = {};
+        oPath[itemPropertyName] = itemPropertyValue;
+        this._id = this._enhanceWith(this._id, {
+            itemdata: {
+                property: oPath
+            }
+        });
+        return this.thisPointer;
+    }
+
     property(propertyName: string, propertyValue: any): B {
         var oPath: any = {};
         oPath[propertyName] = propertyValue;
