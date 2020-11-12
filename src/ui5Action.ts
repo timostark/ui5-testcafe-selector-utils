@@ -1,6 +1,6 @@
 
 var colors = require('colors/safe');
-import { t } from "testcafe";
+import { Selector, t } from "testcafe";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
 enum ui5StepType {
@@ -8,7 +8,8 @@ enum ui5StepType {
     CLICK = 1,
     TYPE_TEXT = 2,
     ASSERT_VISIBLE = 3,
-    PRESS_KEY = 4
+    PRESS_KEY = 4,
+    BLUR = 5
 };
 
 enum ui5StepStatus {
@@ -77,6 +78,8 @@ class ui5StepsDef {
                 return "Click";
             case ui5StepType.TYPE_TEXT:
                 return "Type-Text";
+            case ui5StepType.BLUR:
+                return "Blurs";
             case ui5StepType.ASSERT_VISIBLE:
                 return "Asserts Visiblity";
             case ui5StepType.PRESS_KEY:
@@ -135,7 +138,7 @@ class ui5StepsDef {
         if (stat == ui5StepStatus.FAILED) {
             sText = colors.red(sText);
         } else if (stat == ui5StepStatus.FAILED_UNPROCESSED) {
-            sText = colors.orange(sText);
+            sText = colors.yellow(sText);
         } else if (stat == ui5StepStatus.PROCESSED) {
             sText = colors.green(sText);
         }
@@ -180,7 +183,7 @@ class ui5ActionDef {
     }
 
     public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector);
+        let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
         var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, options);
         oProm = this._delegateAPIToPromise(this, oProm);
@@ -192,6 +195,18 @@ class ui5ActionDef {
         return <any>oProm;
     }
 
+    public blur(): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.BLUR, ui5StepStatus.QUEUED);
+
+        var oProm = ui5ActionDef.currentTestRun.click(Selector(".sapUiBody"));
+        oProm = this._delegateAPIToPromise(this, oProm);
+        oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+        });
+        return <any>oProm;
+    }
 
     public pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise {
         let oAction = ui5Steps.addStep(ui5StepType.PRESS_KEY, ui5StepStatus.QUEUED, undefined, keys);
@@ -207,7 +222,7 @@ class ui5ActionDef {
     }
 
     private _delegateAPIToPromise(_handler: any, dest: any) {
-        ["click", "typeText", "pressKey"].forEach((srcProp) => {
+        ["click", "typeText", "pressKey", "blur"].forEach((srcProp) => {
             const fn = function (...args: any[]) {
                 return _handler[srcProp](...args);
             };

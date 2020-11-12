@@ -217,6 +217,10 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     format(): string {
+        if (this._domQuery) {
+            return this._domQuery;
+        }
+
         let sName = this._name + " ( " + JSON.stringify(this._id) + " )";
         return sName;
     }
@@ -224,6 +228,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
 
     /** actions */
     async data(): Promise<UI5SelectorDef> {
+        await this.build(); //first wait until we generally get stuff
         const data = await this.build().getUI5();
         return data;
     }
