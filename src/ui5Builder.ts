@@ -159,6 +159,12 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
+    localViewName(viewName: string): B {
+        this._id = this._enhanceWith(this._id, {
+            viewProperty: { localViewName: viewName }
+        });
+        return this.thisPointer;
+    }
 
     inTableRow(tableRow?: number): B {
         this._id = this._enhanceWith(this._id, {
