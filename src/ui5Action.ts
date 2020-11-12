@@ -150,6 +150,14 @@ class ui5StepsDef {
 
 let ui5Steps = new ui5StepsDef();
 
+export interface UI5TypeActionOptions extends TypeActionOptions {
+    /**
+     * `true` to log only "****" inside the log handler
+     */
+    anonymize?: boolean;
+}
+
+
 class ui5ActionDef {
 
     public static currentTestRun: TestController;
@@ -157,8 +165,8 @@ class ui5ActionDef {
     constructor() {
     }
 
-    public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: TypeActionOptions): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, text);
+    public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
 
         let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
