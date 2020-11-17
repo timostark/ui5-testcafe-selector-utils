@@ -80,6 +80,14 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
+    interactable(): B {
+        this._id = this._enhanceWith(this._id, {
+            metadata: {
+                interactable: true
+            }
+        });
+        return this.thisPointer;
+    }
 
     /** attributes */
     bindingPath(modelName: string, path: string): B {
@@ -242,7 +250,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
 
         if (bInteractRequired === true) {
             //i want to interact with this page element --> add attributes visible && enabled..
-            this.property("visible", true).property("enabled", true);
+            this.interactable();
         }
 
         return UI5Selector(this._id);
