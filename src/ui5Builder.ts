@@ -175,7 +175,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
-    inTableRow(tableRow?: number): B {
+    row(tableRow?: number): B {
         this._id = this._enhanceWith(this._id, {
             tableSettings: {
                 insideATable: true,
@@ -185,7 +185,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
-    inTableCol(tableCol?: number): B {
+    column(tableCol?: number): B {
         this._id = this._enhanceWith(this._id, {
             tableSettings: {
                 insideATable: true,
