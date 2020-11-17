@@ -171,7 +171,7 @@ class ui5ActionDef {
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
         let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
 
-        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, text, options);
+        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
@@ -185,7 +185,7 @@ class ui5ActionDef {
     public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
-        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build() : selector, options);
+        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);

@@ -14,7 +14,8 @@ export abstract class UI5BaseBuilderIntf {
 
 
     abstract format(): string;
-    abstract build(): Selector;
+    abstract build(bInteractRequired?: boolean): Selector;
+    abstract property(propertyName: string, propertyValue: any): any;
 };
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
@@ -234,9 +235,14 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     /** helpers.. */
-    build(): Selector {
+    build(bInteractRequired?: boolean): Selector {
         if (this._domQuery) {
             return Selector(this._domQuery);
+        }
+
+        if (bInteractRequired === true) {
+            //i want to interact with this page element --> add attributes visible && enabled..
+            this.property("visible", true).property("enabled", true);
         }
 
         return UI5Selector(this._id);
