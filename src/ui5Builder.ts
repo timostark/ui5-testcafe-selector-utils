@@ -19,8 +19,6 @@ export abstract class UI5BaseBuilderIntf {
     abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
 };
 
-export type UI5DataCallback = (element: UI5SelectorDef) => any;
-
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
 
