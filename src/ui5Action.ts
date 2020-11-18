@@ -1,6 +1,7 @@
 
 var colors = require('colors/safe');
 import { Selector, t } from "testcafe";
+import { UI5ComboBoxChainSelection } from ".";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
 enum ui5StepType {
@@ -84,7 +85,7 @@ class ui5StepsDef {
             case ui5StepType.ASSERT_VISIBLE:
                 return "Asserts Visiblity";
             case ui5StepType.ASSERT_PROPERTY_VALUE:
-                return "Asserts Property Value";
+                return "Asserts Property"
             case ui5StepType.PRESS_KEY:
                 return "Asserts Visiblity";
             default:

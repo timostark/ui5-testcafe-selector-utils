@@ -6,6 +6,7 @@ import {
     UI5Selector
 } from "ui5-testcafe-selector";
 import { ui5ActionDef } from "./ui5Action";
+import { ui5AssertDef, ui5Assert, ui5AssertOperator, ui5AssertOperatorVisible } from "./ui5Asserts";
 
 export abstract class UI5BaseBuilderIntf {
     public _id: any;
@@ -16,7 +17,9 @@ export abstract class UI5BaseBuilderIntf {
     abstract format(): string;
     abstract build(bInteractRequired?: boolean): Selector;
     abstract property(propertyName: string, propertyValue: any): any;
+    abstract interactable(): any;
     abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
+    abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
 };
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
@@ -70,6 +73,10 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
 
     tableRow(): UI5TableRowChainSelection {
         return new UI5TableRowChainSelection(this.element("sap.ui.table.Row").insideATable());
+    }
+
+    messageToast(): UI5MessageToast {
+        return new UI5MessageToast(this)
     }
 
     element(sElement: string | string[]): B {
@@ -238,8 +245,26 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     /** actions */
     async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
         await this.build(); //first wait until we generally see the element..
-        const data = await this.build().getUI5(f);
-        return data;
+        if (f) {
+            return this.build().getUI5(f);
+        }
+        return this.build().getUI5();
+    }
+
+    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+        return this.build().getUI5(f);
+    }
+
+    /** expects */
+    expectProperty(property: string): ui5AssertOperator {
+        return this.expect.property(property);
+    }
+    expectVisible(bExpectInteractable: boolean = true): ui5AssertOperatorVisible {
+        return this.expect.visible(bExpectInteractable);
+    }
+
+    get expect(): ui5AssertDef {
+        return ui5Assert(this);
     }
 
     /** helpers.. */
@@ -293,6 +318,29 @@ export class UI5ChainSelection extends UI5BaseBuilder<UI5ChainSelection> {
     }
 }
 
+export class UI5MessageToast extends UI5BaseBuilder<UI5MessageToast> {
+    private _text: string = "";
+
+    getThisPointer(): UI5MessageToast {
+        return this;
+    }
+
+    format(): string {
+        return "Message-Toast" + (this._text.length ? ("with text " + this._text) : "");
+    }
+
+    withText(txt: string): UI5ChainSelection {
+        this._text = txt;
+        return this;
+    }
+
+    build(): Selector {
+        if (this._text.length) {
+            return Selector(".sapMMessageToast").withText(this._text);
+        }
+        return Selector(".sapMMessageToast");
+    }
+}
 
 export class UI5CoreItemSelection extends UI5BaseBuilder<UI5CoreItemSelection> {
     getThisPointer(): UI5CoreItemSelection {
