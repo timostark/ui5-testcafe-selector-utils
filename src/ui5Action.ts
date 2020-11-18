@@ -8,6 +8,7 @@ enum ui5StepType {
     CLICK = 1,
     TYPE_TEXT = 2,
     ASSERT_VISIBLE = 3,
+    ASSERT_PROPERTY_VALUE = 4,
     PRESS_KEY = 4,
     BLUR = 5
 };
@@ -82,6 +83,8 @@ class ui5StepsDef {
                 return "Blurs";
             case ui5StepType.ASSERT_VISIBLE:
                 return "Asserts Visiblity";
+            case ui5StepType.ASSERT_PROPERTY_VALUE:
+                return "Asserts Property Value";
             case ui5StepType.PRESS_KEY:
                 return "Asserts Visiblity";
             default:

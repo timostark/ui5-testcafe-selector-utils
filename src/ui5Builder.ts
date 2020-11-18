@@ -16,7 +16,10 @@ export abstract class UI5BaseBuilderIntf {
     abstract format(): string;
     abstract build(bInteractRequired?: boolean): Selector;
     abstract property(propertyName: string, propertyValue: any): any;
+    abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
 };
+
+export type UI5DataCallback = (element: UI5SelectorDef) => any;
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
@@ -234,11 +237,13 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return sName;
     }
 
-
     /** actions */
-    async data(): Promise<UI5SelectorDef> {
-        await this.build(); //first wait until we generally get stuff
+    async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+        await this.build(); //first wait until we generally see the element..
         const data = await this.build().getUI5();
+        if (f) {
+            return f(data);
+        }
         return data;
     }
 
