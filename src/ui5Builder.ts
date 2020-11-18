@@ -240,10 +240,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     /** actions */
     async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
         await this.build(); //first wait until we generally see the element..
-        const data = await this.build().getUI5();
-        if (f) {
-            return f(data);
-        }
+        const data = await this.build().getUI5(f);
         return data;
     }
 
