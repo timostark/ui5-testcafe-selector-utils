@@ -11,6 +11,15 @@ class ui5AssertDef {
         await ui5ActionDef.currentTestRun.expect(oSel.visible).ok(message, options);
         ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
     }
+
+    async expectProperty(selector: UI5BaseBuilderIntf, property: string, propertyValue: any, message?: string, options?: AssertionOptions) {
+        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_VISIBLE, ui5StepStatus.QUEUED, selector);
+
+        const data = await selector.data();
+        await ui5ActionDef.currentTestRun.expect(data.property[property]).eql(propertyValue, message, options);
+
+        ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
+    }
 }
 
 let ui5Assert = new ui5AssertDef();
