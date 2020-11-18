@@ -255,13 +255,33 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
 
         return UI5Selector(this._id);
     }
+    protected _isObject(item: any) {
+        return (item && typeof item === 'object' && !Array.isArray(item));
+    }
+
+    protected _mergeDeep(target: any, ...sources: any): any {
+        if (!sources.length) return target;
+        const source = sources.shift();
+
+        if (this._isObject(target) && this._isObject(source)) {
+            for (const key in source) {
+                if (this._isObject(source[key])) {
+                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    this._mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
+        return this._mergeDeep(target, ...sources);
+    }
 
     protected _enhanceWith(id: any, enhanceWith: any): any {
         let oEnhanceBasis: any = {};
         if (typeof id === "string") {
             oEnhanceBasis.identifier.id = id;
         } else {
-            oEnhanceBasis = Object.assign(id, enhanceWith);
+            oEnhanceBasis = this._mergeDeep(id, enhanceWith);
         }
         return oEnhanceBasis;
     }
