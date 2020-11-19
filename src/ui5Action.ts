@@ -1,7 +1,7 @@
 
 var colors = require('colors/safe');
 import { Selector, t } from "testcafe";
-import { UI5ComboBoxChainSelection } from ".";
+import { ui5, UI5ComboBoxChainSelection } from ".";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
 enum ui5StepType {
@@ -186,6 +186,11 @@ class ui5ActionDef {
         return <any>oProm;
     }
 
+    public selectElement(selectorParent: UI5BaseBuilderIntf, key: string): ui5ActionDefPromise {
+        return this.click(selectorParent.comboBox().arrow()).
+            click(ui5().parent(selectorParent).itemdata("key", key));
+    }
+
     public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
@@ -226,7 +231,7 @@ class ui5ActionDef {
     }
 
     private _delegateAPIToPromise(_handler: any, dest: any) {
-        ["click", "typeText", "pressKey", "blur"].forEach((srcProp) => {
+        ["click", "typeText", "pressKey", "blur", "selectElement"].forEach((srcProp) => {
             const fn = function (...args: any[]) {
                 return _handler[srcProp](...args);
             };

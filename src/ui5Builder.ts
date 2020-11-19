@@ -20,6 +20,8 @@ export abstract class UI5BaseBuilderIntf {
     abstract interactable(): any;
     abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
     abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
+    abstract comboBox(): UI5ComboBoxChainSelection;
+    abstract parent(parent?: UI5BaseBuilderIntf): any;
 };
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
@@ -203,6 +205,26 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
+    columnDescr(tableCol: string): B {
+        this._id = this._enhanceWith(this._id, {
+            tableSettings: {
+                insideATable: true,
+                tableColDescr: tableCol
+            }
+        });
+        return this.thisPointer;
+    }
+
+    columnId(tableCol: string): B {
+        this._id = this._enhanceWith(this._id, {
+            tableSettings: {
+                insideATable: true,
+                tableColId: tableCol
+            }
+        });
+        return this.thisPointer;
+    }
+
     insideATable(tableRow?: number, tableCol?: number): B {
         this._id = this._enhanceWith(this._id, {
             tableSettings: {
@@ -211,6 +233,16 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
                 tableCol: tableCol
             }
         });
+        return this.thisPointer;
+    }
+
+    parent(parent: UI5BaseBuilderIntf): B {
+        if (parent._id && parent._id.identifier && parent._id.identifier.id) {
+            this.parentId(parent._id.identifier.id);
+        }
+        if (parent._id && parent._id.metadata && parent._id.metadata.elementName) {
+            this.parentElementName(parent._id.metadata.elementName);
+        }
         return this.thisPointer;
     }
 
