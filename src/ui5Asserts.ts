@@ -128,6 +128,7 @@ class ui5AssertDef {
     public tableLength(): ui5AssertOperator {
         let oOperator = new ui5AssertOperator(this._selector);
         oOperator.setDataFunction((e) => e.tableData.finalLength);
+        oOperator.setPropertyName("Final Table Length");
 
         return oOperator;
     }

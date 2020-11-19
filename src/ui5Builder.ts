@@ -65,7 +65,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return new UI5ObjectAttributeSelection(this.element("sap.m.ObjectAttribute"));
     }
     comboBox(): UI5ComboBoxChainSelection {
-        return new UI5ComboBoxChainSelection(this.element(["sap.m.ComboBox", "sap.m.Select"]));
+        return new UI5ComboBoxChainSelection(this.element(["sap.m.MultiComboBox", "sap.m.ComboBox", "sap.m.Select"]));
     }
     list(): UI5ListChainSelection {
         return new UI5ListChainSelection(this.element("sap.m.List"));
