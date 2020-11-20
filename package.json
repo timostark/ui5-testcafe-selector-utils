@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.68",
+  "version": "0.0.70",
   "description": "Test-Cafe selector Utils",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,6 +34,6 @@
     "ts-node": "^9.0.0",
     "typescript": "^4.0.5",
     "testcafe": "*",
-    "ui5-testcafe-selector": "0.3.111"
+    "ui5-testcafe-selector": "0.3.118"
   }
 }

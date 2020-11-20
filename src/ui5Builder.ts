@@ -100,11 +100,20 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     /** attributes */
-    bindingPath(modelName: string, path: string): B {
+    bindingContextPath(modelName: string, path: string): B {
         var oPath: any = {};
         oPath[modelName] = path;
         this._id = this._enhanceWith(this._id, {
             bindingContext: oPath
+        });
+        return this.thisPointer;
+    }
+
+    bindingPath(attribute: string, path: string): B {
+        var oPath: any = {};
+        oPath[attribute] = path;
+        this._id = this._enhanceWith(this._id, {
+            bindingPath: oPath
         });
         return this.thisPointer;
     }
