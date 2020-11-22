@@ -87,7 +87,7 @@ class ui5StepsDef {
             case ui5StepType.ASSERT_PROPERTY_VALUE:
                 return "Asserts Property"
             case ui5StepType.PRESS_KEY:
-                return "Asserts Visiblity";
+                return "Press Key";
             default:
                 return "";
         }
