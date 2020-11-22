@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.77",
+  "version": "0.0.79",
   "description": "Test-Cafe selector Utils",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,13 +27,15 @@
   },
   "peerDependencies": {
     "testcafe": "*",
-    "ui5-testcafe-selector": "0.3.106"
+    "ui5-testcafe-selector": "0.3.106",
+    "dotenv": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "^14.14.6",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.5",
     "testcafe": "*",
-    "ui5-testcafe-selector": "0.3.118"
+    "ui5-testcafe-selector": "0.3.118",
+    "dotenv": "^8.2.0"
   }
 }

@@ -20,6 +20,7 @@ class ui5WaiterDef {
                     if (oFloatingContainer) {
                         clearInterval(iInterval);
                         clearTimeout(iTimeout);
+                        console.clear(); //skipp all errors which came up during startup..
                         resolve();
                     }
                 }, 10);
