@@ -46,9 +46,14 @@ interface ui5ActionTests {
     [key: string]: ui5ActionStep[];
 }
 
+interface ui5ActionErrorLogs {
+    [key: string]: string[];
+}
+
 class ui5StepsDef {
     _steps: ui5ActionTests = {};
     _startTime: number = 0;
+    _errorLogs: ui5ActionErrorLogs = {};
 
     getCurrentTestName(): string {
         if (ui5ActionDef.currentTestRun.ctx && ui5ActionDef.currentTestRun.ctx.testCase) {
@@ -57,6 +62,17 @@ class ui5StepsDef {
             return ui5ActionDef.currentTestRun.ctx.name;
         }
         return "";
+    }
+
+    setConsoleErrorLogs(errorLog: string[]) {
+        this._errorLogs[this.getCurrentTestName()] = errorLog;
+    }
+
+    getConsoleErrorLog(testCase: string): string[] {
+        if (this._errorLogs[testCase]) {
+            return this._errorLogs[testCase];
+        }
+        return [];
     }
 
     getStatusDescr(status: ui5StepStatus): string {
@@ -104,6 +120,10 @@ class ui5StepsDef {
         }
 
         return this._steps[this.getCurrentTestName()];
+    }
+
+    getCurConsoleErrorLogs(): string[] {
+        return this.getConsoleErrorLog(this.getCurrentTestName());
     }
 
     addStep(stepType: ui5StepType, status: ui5StepStatus, selector?: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
