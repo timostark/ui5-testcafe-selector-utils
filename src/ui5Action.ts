@@ -1,6 +1,6 @@
 
 var colors = require('colors/safe');
-import { Selector, t } from "testcafe";
+import { ClientFunction, Selector, t } from "testcafe";
 import { ui5, UI5ComboBoxChainSelection } from ".";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
@@ -190,6 +190,14 @@ class ui5ActionDef {
     public static currentTestRun: TestController;
 
     constructor() {
+    }
+
+    public async debugSelector(elementId: string) {
+        const fnWaitLoaded = ClientFunction((elementId) => {
+            // @ts-ignore
+            window["__ui5SelectorDebug"] = elementId;
+        });
+        await fnWaitLoaded(elementId);
     }
 
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
