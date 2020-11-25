@@ -11,7 +11,8 @@ enum ui5StepType {
     ASSERT_VISIBLE = 3,
     ASSERT_PROPERTY_VALUE = 4,
     PRESS_KEY = 4,
-    BLUR = 5
+    BLUR = 5,
+    CLEAR_TEXT = 6
 };
 
 enum ui5StepStatus {
@@ -104,6 +105,8 @@ class ui5StepsDef {
                 return "Asserts Property"
             case ui5StepType.PRESS_KEY:
                 return "Press Key";
+            case ui5StepType.CLEAR_TEXT:
+                return "Clear";
             default:
                 return "";
         }
@@ -198,6 +201,20 @@ class ui5ActionDef {
             window["__ui5SelectorDebug"] = elementId;
         });
         await fnWaitLoaded(elementId);
+    }
+
+    public clearText(selector: UI5BaseBuilderIntf | Selector): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(ui5StepType.CLEAR_TEXT, ui5StepStatus.QUEUED, selector);
+
+        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, "", { replace: true });
+        oProm = this._delegateAPIToPromise(this, oProm);
+        oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+        });
+
+        return <any>oProm;
     }
 
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
