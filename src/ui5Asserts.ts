@@ -3,11 +3,11 @@ import { UI5AnyValueBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 import { t } from "testcafe";
 
 class ui5AssertOperator {
-    _selector: UI5BaseBuilderIntf;
-    _testCafeSelector: any = null;
-    _propertyName: string = "";
-    _lclTestRun: TestController;
-    _filterFunction: (e: any) => any = e => e;
+    protected _selector: UI5BaseBuilderIntf;
+    protected _testCafeSelector: any = null;
+    protected _propertyName: string = "";
+    protected _lclTestRun: TestController;
+    protected _filterFunction: (e: any) => any = e => e;
 
     constructor(selector: UI5BaseBuilderIntf | Selector, t: TestController) {
         this._selector = <UI5BaseBuilderIntf>selector;

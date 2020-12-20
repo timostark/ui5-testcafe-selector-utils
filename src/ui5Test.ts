@@ -6,6 +6,7 @@ require('dotenv').config();
 export function ui5Fixture(name: string, product: string, url: string): FixtureFn {
     return fixture(name)
         .meta('PRODUCT', product)
+        .meta('URL', url)
         .page(url);
 }
 
