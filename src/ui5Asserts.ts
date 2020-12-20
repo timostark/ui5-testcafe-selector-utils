@@ -1,15 +1,18 @@
 import { ui5ActionDef, ui5Steps, ui5StepType, ui5StepStatus } from "./ui5Action";
-import { UI5BaseBuilderIntf } from "./ui5Builder";
+import { UI5AnyValueBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
+import { t } from "testcafe";
 
 class ui5AssertOperator {
     _selector: UI5BaseBuilderIntf;
     _testCafeSelector: any = null;
     _propertyName: string = "";
+    _lclTestRun: TestController;
     _filterFunction: (e: any) => any = e => e;
 
-    constructor(selector: UI5BaseBuilderIntf | Selector) {
+    constructor(selector: UI5BaseBuilderIntf | Selector, t: TestController) {
         this._selector = <UI5BaseBuilderIntf>selector;
         this._testCafeSelector = selector instanceof UI5BaseBuilderIntf ? selector.build() : selector;
+        this._lclTestRun = t;
     }
 
     public setPropertyName(name: string) {
@@ -25,9 +28,9 @@ class ui5AssertOperator {
     }
 
     public async greater(val: any, message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " greater than '" + val.toString() + "'"));
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " greater than '" + val.toString() + "'"));
         await this._selector.build();
-        let oProm = ui5ActionDef.currentTestRun.expect(this._selector.dataSync(this._filterFunction)).gt(val, message, options);
+        let oProm = this._lclTestRun.expect(this._selector.dataSync(this._filterFunction)).gt(val, message, options);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
         }, function () {
@@ -37,9 +40,9 @@ class ui5AssertOperator {
     }
 
     public async less(val: any, message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " less than '" + val.toString() + "'"));
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " less than '" + val.toString() + "'"));
         await this._selector.build();
-        let oProm = ui5ActionDef.currentTestRun.expect(this._selector.dataSync(this._filterFunction)).lt(val, message, options);
+        let oProm = this._lclTestRun.expect(this._selector.dataSync(this._filterFunction)).lt(val, message, options);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
         }, function () {
@@ -49,10 +52,10 @@ class ui5AssertOperator {
     }
 
     public async equal(val: any, message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " equal to '" + val.toString() + "'"));
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " equal to '" + val.toString() + "'"));
 
         await this._selector.build(); //wait until generally available..
-        let oProm = ui5ActionDef.currentTestRun.expect(this._selector.dataSync(this._filterFunction)).eql(val, message, options);
+        let oProm = this._lclTestRun.expect(this._selector.dataSync(this._filterFunction)).eql(val, message, options);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
         }, function () {
@@ -62,10 +65,10 @@ class ui5AssertOperator {
     }
 
     public async notEqual(val: any, message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " unequal to '" + val.toString() + "'"));
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_PROPERTY_VALUE, ui5StepStatus.QUEUED, this._selector, (this._propertyName + " unequal to '" + val.toString() + "'"));
 
         await this._selector.build();
-        let oProm = ui5ActionDef.currentTestRun.expect(this._selector.dataSync(this._filterFunction)).notEql(val, message, options);
+        let oProm = this._lclTestRun.expect(this._selector.dataSync(this._filterFunction)).notEql(val, message, options);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
         }, function () {
@@ -77,10 +80,10 @@ class ui5AssertOperator {
 
 class ui5AssertOperatorVisible extends ui5AssertOperator {
     async ok(message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_VISIBLE, ui5StepStatus.QUEUED, this._selector);
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_VISIBLE, ui5StepStatus.QUEUED, this._selector);
         try {
-            await ui5ActionDef.currentTestRun.expect(this._testCafeSelector.exists).ok(message, options);
-            await ui5ActionDef.currentTestRun.expect(this._testCafeSelector.visible).ok(message, options);
+            await this._lclTestRun.expect(this._testCafeSelector.exists).ok(message, options);
+            await this._lclTestRun.expect(this._testCafeSelector.visible).ok(message, options);
         } catch (err) {
             ui5Steps.setStepStatus(oStep, ui5StepStatus.FAILED);
             throw err;
@@ -90,9 +93,9 @@ class ui5AssertOperatorVisible extends ui5AssertOperator {
     }
 
     async notOK(message?: string, options?: AssertionOptions) {
-        let oStep = ui5Steps.addStep(ui5StepType.ASSERT_VISIBLE, ui5StepStatus.QUEUED, this._selector);
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_VISIBLE, ui5StepStatus.QUEUED, this._selector);
         try {
-            await ui5ActionDef.currentTestRun.expect(this._testCafeSelector.visible).notOk(message, options);
+            await this._lclTestRun.expect(this._testCafeSelector.visible).notOk(message, options);
         } catch (err) {
             ui5Steps.setStepStatus(oStep, ui5StepStatus.FAILED);
             return;
@@ -103,8 +106,53 @@ class ui5AssertOperatorVisible extends ui5AssertOperator {
 }
 
 
+class ui5AssertOperatorExists extends ui5AssertOperator {
+    async ok(message?: string, options?: AssertionOptions) {
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_EXISTS, ui5StepStatus.QUEUED, this._selector);
+        try {
+            await this._lclTestRun.expect(this._testCafeSelector.exists).ok(message, options);
+        } catch (err) {
+            ui5Steps.setStepStatus(oStep, ui5StepStatus.FAILED);
+            throw err;
+        }
+
+        ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
+    }
+
+    async notOK(message?: string, options?: AssertionOptions) {
+        let oStep = ui5Steps.addStep(this._lclTestRun, ui5StepType.ASSERT_EXISTS, ui5StepStatus.QUEUED, this._selector);
+        try {
+            await this._lclTestRun.expect(this._testCafeSelector.exists).notOk(message, options);
+        } catch (err) {
+            ui5Steps.setStepStatus(oStep, ui5StepStatus.FAILED);
+            return;
+        }
+
+        ui5Steps.setStepStatus(oStep, ui5StepStatus.PROCESSED);
+    }
+}
+
 class ui5AssertDef {
-    private _selector: UI5BaseBuilderIntf | Selector;
+    private _selector: UI5BaseBuilderIntf;
+    private _lclTestRun: TestController;
+
+    public get t(): TestController {
+        try {
+            var oCtx = t.ctx; // this will crash in case no test run can be derived..
+            return t;
+        } catch { };
+        return this._lclTestRun ? this._lclTestRun : ui5ActionDef.currentTestRun; //use 
+    }
+
+    public exists(expectInteractable: boolean = true): ui5AssertOperatorExists {
+        let selector = this._selector;
+        if (expectInteractable === true) {
+            selector = selector instanceof UI5BaseBuilderIntf ? selector.interactable() : selector;
+        }
+
+        let oOperator = new ui5AssertOperatorExists(this._selector, this.t);
+        return oOperator;
+    }
 
     public visible(expectInteractable: boolean = true): ui5AssertOperatorVisible {
         let selector = this._selector;
@@ -112,12 +160,12 @@ class ui5AssertDef {
             selector = selector instanceof UI5BaseBuilderIntf ? selector.interactable() : selector;
         }
 
-        let oOperator = new ui5AssertOperatorVisible(this._selector);
+        let oOperator = new ui5AssertOperatorVisible(this._selector, this.t);
         return oOperator;
     }
 
     public property(property: string): ui5AssertOperator {
-        let oOperator = new ui5AssertOperator(this._selector);
+        let oOperator = new ui5AssertOperator(this._selector, this.t);
         oOperator.setPropertyName(property);
         var f: (e: any) => any = <any>new Function('e', 'return e.property["' + property + '"];');
         oOperator.setDataFunction(f);
@@ -126,28 +174,41 @@ class ui5AssertDef {
     }
 
     public tableLength(): ui5AssertOperator {
-        let oOperator = new ui5AssertOperator(this._selector);
+        let oOperator = new ui5AssertOperator(this._selector, this.t);
         oOperator.setDataFunction((e) => e.tableData.finalLength);
         oOperator.setPropertyName("Final Table Length");
 
         return oOperator;
     }
 
-    public element(property: (e: any) => any): ui5AssertOperator {
-        let oOperator = new ui5AssertOperator(this._selector);
+    public element(property: (e: UI5SelectorDef) => any): ui5AssertOperator {
+        let oOperator = new ui5AssertOperator(this._selector, this.t);
         oOperator.setDataFunction(property);
 
         return oOperator;
     }
 
-    public constructor(selector: UI5BaseBuilderIntf | Selector) {
-        this._selector = selector;
+    public value(): ui5AssertOperator {
+        let oOperator = new ui5AssertOperator(this._selector, this.t);
+        oOperator.setDataFunction((e) => e);
+
+        return oOperator;
+    }
+
+    public constructor(selector: UI5BaseBuilderIntf | any, t?: TestController) {
+        if (selector instanceof UI5BaseBuilderIntf) {
+            this._selector = selector;
+        } else {
+            this._selector = new UI5AnyValueBuilder(selector);
+        }
+
+        this._lclTestRun = t ? t : ui5ActionDef.currentTestRun;
     }
 }
 
 
-function ui5Assert(selector: UI5BaseBuilderIntf | Selector) {
-    return new ui5AssertDef(selector);
+function ui5Assert(selector: UI5BaseBuilderIntf | Selector, t?: TestController) {
+    return new ui5AssertDef(selector, t);
 }
 
 export { ui5Assert, ui5AssertDef, ui5AssertOperator, ui5AssertOperatorVisible };

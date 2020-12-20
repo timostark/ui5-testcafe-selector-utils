@@ -2,6 +2,7 @@
 var colors = require('colors/safe');
 import { ClientFunction, Selector, t } from "testcafe";
 import { ui5, UI5ComboBoxChainSelection } from ".";
+import { ui5AssertDef, ui5AssertOperator, ui5AssertOperatorVisible } from "./ui5Asserts";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 
 enum ui5StepType {
@@ -12,7 +13,8 @@ enum ui5StepType {
     ASSERT_PROPERTY_VALUE = 4,
     PRESS_KEY = 4,
     BLUR = 5,
-    CLEAR_TEXT = 6
+    CLEAR_TEXT = 6,
+    ASSERT_EXISTS = 7,
 };
 
 enum ui5StepStatus {
@@ -27,18 +29,20 @@ class ui5ActionStep {
     public stepId: number = 0;
     public stepType: ui5StepType = ui5StepType.UNDEFINED;
     public status: ui5StepStatus = ui5StepStatus.UNDEFINED;
+    public testName: string = "";
 
     public selector: string = "";
     public activity: string = "";
     public startTime: number = 0;
     public endTime: number = 0;
 
-    constructor(stepId: number, stepType: ui5StepType, status: ui5StepStatus, selector: string, startTime: number, activity?: string) {
+    constructor(stepId: number, stepType: ui5StepType, status: ui5StepStatus, selector: string, startTime: number, testName: string, activity?: string) {
         this.stepId = stepId;
         this.stepType = stepType;
         this.status = status;
         this.selector = selector;
         this.startTime = startTime;
+        this.testName = testName;
         this.activity = activity ? activity : "";
     }
 }
@@ -56,17 +60,19 @@ class ui5StepsDef {
     _startTime: number = 0;
     _errorLogs: ui5ActionErrorLogs = {};
 
-    getCurrentTestName(): string {
-        if (ui5ActionDef.currentTestRun.ctx && ui5ActionDef.currentTestRun.ctx.testCase) {
-            return ui5ActionDef.currentTestRun.ctx.testCase;
-        } else if (ui5ActionDef.currentTestRun.ctx && ui5ActionDef.currentTestRun.ctx.name) {
-            return ui5ActionDef.currentTestRun.ctx.name;
+    getCurrentTestName(t?: TestController): string {
+        t = t ? t : ui5ActionDef.currentTestRun;
+
+        if (t.ctx && t.ctx.testCase) {
+            return t.ctx.testCase;
+        } else if (t.ctx && t.ctx.name) {
+            return t.ctx.name;
         }
         return "";
     }
 
-    setConsoleErrorLogs(errorLog: string[]) {
-        this._errorLogs[this.getCurrentTestName()] = errorLog;
+    setConsoleErrorLogs(t: TestController, errorLog: string[]) {
+        this._errorLogs[this.getCurrentTestName(t)] = errorLog;
     }
 
     getConsoleErrorLog(testCase: string): string[] {
@@ -116,27 +122,28 @@ class ui5StepsDef {
         return this._steps[sTestId + sFixtureName];
     }
 
-    getCurSteps(): ui5ActionStep[] {
-        if (!this._steps[this.getCurrentTestName()]) {
-            this._steps[this.getCurrentTestName()] = [];
+    getCurSteps(testName: string): ui5ActionStep[] {
+        if (!this._steps[testName]) {
+            this._steps[testName] = [];
             this._startTime = process.uptime();
         }
 
-        return this._steps[this.getCurrentTestName()];
+        return this._steps[testName];
     }
 
     getCurConsoleErrorLogs(): string[] {
         return this.getConsoleErrorLog(this.getCurrentTestName());
     }
 
-    addStep(stepType: ui5StepType, status: ui5StepStatus, selector?: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
+    addStep(t: TestController, stepType: ui5StepType, status: ui5StepStatus, selector?: UI5BaseBuilderIntf | Selector, activity?: string): ui5ActionStep {
         var sFormat = "";
         if (selector) {
             sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
         }
 
-        let step = new ui5ActionStep(this.getCurSteps().length, stepType, status, sFormat, process.uptime(), activity);
-        this.getCurSteps().push(step);
+        var sCurTestName = this.getCurrentTestName(t);
+        let step = new ui5ActionStep(this.getCurSteps(sCurTestName).length, stepType, status, sFormat, process.uptime(), sCurTestName, activity);
+        this.getCurSteps(sCurTestName).push(step);
 
         let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
         if (activity) {
@@ -150,11 +157,11 @@ class ui5StepsDef {
     }
 
     setStepStatus(step: ui5ActionStep, stat: ui5StepStatus) {
-        if (stat === ui5StepStatus.FAILED && this.hasFailedSteps()) {
+        if (stat === ui5StepStatus.FAILED && this.hasFailedSteps(step.testName)) {
             stat = ui5StepStatus.FAILED_UNPROCESSED;
         }
 
-        let oLastTest = this.getCurSteps().find(e => { return e.stepId === step.stepId - 1 });
+        let oLastTest = this.getCurSteps(step.testName).find(e => { return e.stepId === step.stepId - 1 });
         step.startTime = oLastTest ? oLastTest.endTime : step.startTime;
         step.status = stat;
         step.endTime = process.uptime();
@@ -173,8 +180,8 @@ class ui5StepsDef {
         console.log(sText);
     }
 
-    hasFailedSteps(): boolean {
-        return this.getCurSteps().find(e => e.status === ui5StepStatus.FAILED) !== undefined;
+    hasFailedSteps(test: string): boolean {
+        return this.getCurSteps(test).find(e => e.status === ui5StepStatus.FAILED) !== undefined;
     }
 }
 
@@ -191,8 +198,18 @@ export interface UI5TypeActionOptions extends TypeActionOptions {
 class ui5ActionDef {
 
     public static currentTestRun: TestController;
+    public lclTestRun: TestController;
 
-    constructor() {
+    constructor(t?: TestController) {
+        this.lclTestRun = t ? t : ui5ActionDef.currentTestRun;
+    }
+
+    public get t(): TestController {
+        try {
+            var oCtx = t.ctx; // this will crash in case no test run can be derived..
+            return t;
+        } catch { };
+        return this.lclTestRun ? this.lclTestRun : ui5ActionDef.currentTestRun; //use 
     }
 
     public async debugSelector(elementId: string) {
@@ -203,11 +220,35 @@ class ui5ActionDef {
         await fnWaitLoaded(elementId);
     }
 
-    public clearText(selector: UI5BaseBuilderIntf | Selector): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.CLEAR_TEXT, ui5StepStatus.QUEUED, selector);
 
-        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, "", { replace: true });
+    public expectProperty(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperator {
+        return new ui5AssertDef(selector, this.t).property(prop);
+    }
+    public expectExists(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperator {
+        return new ui5AssertDef(selector, this.t).exists();
+    }
+    public expectVisible(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperatorVisible {
+        return new ui5AssertDef(selector, this.t).visible();
+    }
+    public expectElement(selector: UI5BaseBuilderIntf, prop: (e: UI5SelectorDef) => any): ui5AssertOperator {
+        return new ui5AssertDef(selector, this.t).element(prop);
+    }
+
+    public expectValue(selector: any): ui5AssertOperator {
+        return new ui5AssertDef(selector, this.t).value();
+    }
+
+    public expect(selector: UI5BaseBuilderIntf | any): ui5AssertDef {
+        return new ui5AssertDef(selector, this.t);
+    }
+
+    public clearText(selector: UI5BaseBuilderIntf | Selector): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.CLEAR_TEXT, ui5StepStatus.QUEUED, selector);
+
+        var oLclTestRun = this.t;
+        let oProm = this.t.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, "", { replace: true });
         oProm = this._delegateAPIToPromise(this, oProm);
+
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
         }, function () {
@@ -218,10 +259,11 @@ class ui5ActionDef {
     }
 
     public typeText(selector: UI5BaseBuilderIntf | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
 
-        let oProm = ui5ActionDef.currentTestRun.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, text, options);
+        let oProm = this.t.typeText(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
+
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
         }, function () {
@@ -237,10 +279,11 @@ class ui5ActionDef {
     }
 
     public click(selector: UI5BaseBuilderIntf | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.CLICK, ui5StepStatus.QUEUED, selector);
 
-        var oProm = ui5ActionDef.currentTestRun.click(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, options);
+        var oProm = this.t.click(selector instanceof UI5BaseBuilderIntf ? selector.build(true) : selector, options);
         oProm = this._delegateAPIToPromise(this, oProm);
+
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
         }, function () {
@@ -250,9 +293,9 @@ class ui5ActionDef {
     }
 
     public blur(): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.BLUR, ui5StepStatus.QUEUED);
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.BLUR, ui5StepStatus.QUEUED);
 
-        var oProm = ui5ActionDef.currentTestRun.click(Selector(".sapUiBody"));
+        var oProm = this.t.click(Selector(".sapUiBody"));
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
@@ -263,9 +306,9 @@ class ui5ActionDef {
     }
 
     public pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise {
-        let oAction = ui5Steps.addStep(ui5StepType.PRESS_KEY, ui5StepStatus.QUEUED, undefined, keys);
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.PRESS_KEY, ui5StepStatus.QUEUED, undefined, keys);
 
-        var oProm = ui5ActionDef.currentTestRun.pressKey(keys, options);
+        var oProm = this.t.pressKey(keys, options);
         oProm = this._delegateAPIToPromise(this, oProm);
         oProm.then(function () { //dmmy..
             ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);

@@ -18,11 +18,37 @@ export abstract class UI5BaseBuilderIntf {
     abstract build(bInteractRequired?: boolean): Selector;
     abstract property(propertyName: string, propertyValue: any): any;
     abstract interactable(): any;
+    // @ts-ignore
     abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
     abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
     abstract comboBox(): UI5ComboBoxChainSelection;
     abstract parent(parent?: UI5BaseBuilderIntf): any;
 };
+
+export class UI5AnyValueBuilder extends UI5BaseBuilderIntf {
+    public _value: any;
+
+    format() { return ""; }
+    build(bInteractRequired?: boolean): Selector { return Selector(""); }
+    property(propertyName: string, propertyValue: any): any { return this; }
+    interactable(): any { return this; }
+    // @ts-ignore
+    async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+        return this._value;
+    }
+
+    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+        return this._value;
+    }
+
+    comboBox() { return new UI5ComboBoxChainSelection(this); }
+    parent(parent?: UI5BaseBuilderIntf) { return this; };
+
+    constructor(val: any) {
+        super();
+        this._value = val;
+    }
+}
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
@@ -100,7 +126,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     /** attributes */
-    bindingContextPath(modelName: string, path: string): B {
+    bindingContextPath(modelName: string | any, path: string): B {
         var oPath: any = {};
         oPath[modelName] = path;
         this._id = this._enhanceWith(this._id, {
@@ -305,7 +331,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     get expect(): ui5AssertDef {
-        return ui5Assert(this);
+        return ui5Assert(this, t);
     }
 
     /** helpers.. */

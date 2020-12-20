@@ -21,6 +21,7 @@ class ui5WaiterDef {
                         clearInterval(iInterval);
                         clearTimeout(iTimeout);
                         console.clear(); //skipp all errors which came up during startup..
+                        // @ts-ignore
                         resolve();
                     }
                 }, 10);
