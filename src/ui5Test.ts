@@ -1,6 +1,8 @@
 import { ui5ActionDef, ui5Steps } from "./ui5Action"
 var colors = require('colors/safe');
 
+require('dotenv').config();
+
 export function ui5Fixture(name: string, product: string, url: string): FixtureFn {
     return fixture(name)
         .meta('PRODUCT', product)
