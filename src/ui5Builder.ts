@@ -20,8 +20,8 @@ export abstract class UI5BaseBuilderIntf {
     abstract property(propertyName: string, propertyValue: any): any;
     abstract interactable(): any;
     // @ts-ignore
-    abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
-    abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any>;
+    abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef>;
+    abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef>;
     abstract comboBox(): UI5ComboBoxChainSelection;
     abstract parent(parent?: UI5BaseBuilderIntf): any;
 };
@@ -34,11 +34,11 @@ export class UI5AnyValueBuilder extends UI5BaseBuilderIntf {
     property(propertyName: string, propertyValue: any): any { return this; }
     interactable(): any { return this; }
     // @ts-ignore
-    async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+    async data(f?: UI5DataCallback): Promise<UI5SelectorDef> {
         return this._value;
     }
 
-    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef> {
         return this._value;
     }
 
@@ -311,7 +311,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
 
     /** actions */
-    async data(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+    async data(f?: UI5DataCallback): Promise<UI5SelectorDef> {
         await this.build(); //first wait until we generally see the element..
         if (f) {
             return this.build().getUI5(f);
@@ -319,7 +319,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.build().getUI5();
     }
 
-    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef | any> {
+    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef> {
         return this.build().getUI5(f);
     }
 
