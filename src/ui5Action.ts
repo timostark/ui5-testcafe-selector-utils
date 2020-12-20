@@ -224,10 +224,10 @@ class ui5ActionDef {
     public expectProperty(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperator {
         return new ui5AssertDef(selector, this.t).property(prop);
     }
-    public expectExists(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperator {
+    public expectExists(selector: UI5BaseBuilderIntf): ui5AssertOperator {
         return new ui5AssertDef(selector, this.t).exists();
     }
-    public expectVisible(selector: UI5BaseBuilderIntf, prop: string): ui5AssertOperatorVisible {
+    public expectVisible(selector: UI5BaseBuilderIntf): ui5AssertOperatorVisible {
         return new ui5AssertDef(selector, this.t).visible();
     }
     public expectElement(selector: UI5BaseBuilderIntf, prop: (e: UI5SelectorDef) => any): ui5AssertOperator {

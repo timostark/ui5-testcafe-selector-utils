@@ -329,6 +329,12 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     expectVisible(bExpectInteractable: boolean = true): ui5AssertOperatorVisible {
         return this.expect.visible(bExpectInteractable);
     }
+    expectExists(): ui5AssertOperator {
+        return this.expect.exists();
+    }
+    expectElement(prop: (e: UI5SelectorDef) => any): ui5AssertOperator {
+        return this.expect.element(prop);
+    }
 
     get expect(): ui5AssertDef {
         return ui5Assert(this, t);

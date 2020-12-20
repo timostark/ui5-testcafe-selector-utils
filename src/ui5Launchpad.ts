@@ -2,18 +2,24 @@ import { ui5 } from ".";
 import { ui5Action } from "./ui5Action";
 import { ui5Waiter } from "./ui5Waiter";
 
-interface startupParams {
+export interface ui5LaunchpadStartupParams {
     user: string,
     password: string,
+    afterLogin?: () => Promise<any>,
     tile?: string;
 }
 
-class Launchpad {
-    async startup(params: startupParams) {
+class ui5LaunchpadDef {
+    async startup(params: ui5LaunchpadStartupParams) {
         await this.login(params.user, params.password);
 
         //wait for the launchpad to be loaded.. 
         await ui5Waiter.waitForLaunchpadToBeLoaded();
+
+        //if wanted, wait for further actions..
+        if (params.afterLogin) {
+            await params.afterLogin();
+        }
 
         if (params.tile) {
             await this.openTile(params.tile);
@@ -31,4 +37,4 @@ class Launchpad {
     }
 }
 
-export default new Launchpad();
+export var ui5Launchpad = new ui5LaunchpadDef();
