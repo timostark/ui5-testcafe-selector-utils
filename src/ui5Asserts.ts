@@ -1,6 +1,7 @@
 import { ui5ActionDef, ui5Steps, ui5StepType, ui5StepStatus } from "./ui5Action";
 import { UI5AnyValueBuilder, UI5BaseBuilderIntf } from "./ui5Builder";
 import { t } from "testcafe";
+import { UI5SelectorDef } from "ui5-testcafe-selector";
 
 class ui5AssertOperator {
     protected _selector: UI5BaseBuilderIntf;

@@ -1,6 +1,7 @@
 
 var colors = require('colors/safe');
 import { ClientFunction, Selector, t } from "testcafe";
+import { UI5SelectorDef } from "ui5-testcafe-selector";
 import { ui5, UI5ComboBoxChainSelection } from ".";
 import { ui5AssertDef, ui5AssertOperator, ui5AssertOperatorVisible } from "./ui5Asserts";
 import { UI5ChainSelection, UI5BaseBuilder, UI5BaseBuilderIntf } from "./ui5Builder";

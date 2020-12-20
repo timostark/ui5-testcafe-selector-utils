@@ -7,4 +7,6 @@ import { ui5Test, ui5Fixture } from "./ui5Test";
 import { ui5Lumira, ui5LumiraParameters, ui5LumiraStartupParameters } from "./ui5Lumira";
 import { ui5Launchpad, ui5LaunchpadStartupParams } from "./ui5Launchpad";
 
-export { ui5, ui5Assert, ui5Fixture, ui5Lumira, ui5LumiraParameters, ui5LumiraStartupParameters, ui5Launchpad, ui5LaunchpadStartupParams, ui5AssertDef, ui5Waiter, ui5AssertOperator, ui5AssertOperatorVisible, ui5Steps, ui5Test, ui5ActionDef, UI5ChainSelection, UI5ObjectAttributeSelection, UI5TableRowChainSelection, UI5ListChainSelection, UI5ComboBoxChainSelection, UI5BaseBuilder, UI5CoreItemSelection, ui5Action }
+import { UI5SelectorDef } from "ui5-testcafe-selector"
+
+export { ui5, ui5Assert, ui5Fixture, ui5Lumira, UI5SelectorDef, ui5LumiraParameters, ui5LumiraStartupParameters, ui5Launchpad, ui5LaunchpadStartupParams, ui5AssertDef, ui5Waiter, ui5AssertOperator, ui5AssertOperatorVisible, ui5Steps, ui5Test, ui5ActionDef, UI5ChainSelection, UI5ObjectAttributeSelection, UI5TableRowChainSelection, UI5ListChainSelection, UI5ComboBoxChainSelection, UI5BaseBuilder, UI5CoreItemSelection, ui5Action }

@@ -3,7 +3,8 @@ import {
     t
 } from "testcafe";
 import {
-    UI5Selector
+    UI5DataCallback,
+    UI5Selector, UI5SelectorDef
 } from "ui5-testcafe-selector";
 import { ui5ActionDef } from "./ui5Action";
 import { ui5AssertDef, ui5Assert, ui5AssertOperator, ui5AssertOperatorVisible } from "./ui5Asserts";
