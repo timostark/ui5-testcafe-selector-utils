@@ -26,7 +26,7 @@ export function ui5Fixture(name: string, url: string, category?: string): Fixtur
         })
         .after(async t => {
             if (ui5Config.coverage.enabled) {
-                await ui5Proxy.checkLoggedComponents();
+                await ui5Proxy.logMissingComponents();
             }
         })
         .page(urlUse);
@@ -59,6 +59,10 @@ export function ui5Test(description: string, testCase: any, func?: (actionDef: u
         ui5Steps.setConsoleErrorLogs(t, error);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
         console.log(colors.bold(testCase + " : '" + description + "' stopped after " + sTime + "s"));
+
+        if (ui5Config.coverage.enabled) {
+            await ui5Proxy.checkLoggedComponents(t);
+        }
     }).meta('TEST_CASE', testCase)(description, async t => {
         t.ctx.name = description;
         t.ctx.testCase = testCase;

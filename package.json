@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.125",
+  "version": "0.0.134",
   "description": "Test-Cafe selector Utils",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
     "istanbul-lib-coverage": "^3.0.0",
     "istanbul-lib-instrument": "^4.0.3",
     "tmp": "^0.2.1",
-    "ui5-testcafe-selector": "0.3.133",
+    "ui5-testcafe-selector": "0.3.135",
     "url-parse": "^1.4.7"
   },
   "peerDependencies": {

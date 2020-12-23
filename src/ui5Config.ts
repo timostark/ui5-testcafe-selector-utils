@@ -1,12 +1,14 @@
 import { ui5Password } from "./ui5Password";
 
 export interface ui5CoverageConfiguration {
-    outDir: string,
-    type: string,
-    enabled: boolean,
-    log: boolean,
-    basePath: string,
-    debugComponents: string[]
+    outDir?: string,
+    type?: string,
+    enabled?: boolean,
+    log?: boolean,
+    basePath?: string,
+    debugComponents?: string[],
+    includePaths?: string[],
+    excludePaths?: string[]
 }
 
 export interface ui5RestConfiguration {
@@ -44,10 +46,14 @@ class ui5ConfigDef {
                     type: "html",
                     enabled: false,
                     log: false,
-                    debugComponents: []
+                    debugComponents: [],
+                    includePaths: [],
+                    excludePaths: []
                 }
             };
         }
+
+        this._config.coverage.enabled = process.env.UI5_COVERAGE_ENABLED ? process.env.UI5_COVERAGE_ENABLED === "true" : this._config.coverage.enabled;
     }
 
     get coverage(): ui5CoverageConfiguration {

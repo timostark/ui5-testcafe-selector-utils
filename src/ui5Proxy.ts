@@ -18,11 +18,15 @@ class ui5ProxyDef {
     private _oServerPromise: any;
     private _adjustedUrl: string = "";
     private _config?: ui5CoverageConfiguration;
+    private _reportedLists: any;
+    private _fileCache: any;
 
     constructor() {
         this._coverageUrl = "";
         this._basePath = "";
         this._bCoverageStarted = false;
+        this._reportedLists = {};
+        this._fileCache = {};
         this._instrumenter = im.createInstrumenter();
     }
 
@@ -44,7 +48,7 @@ class ui5ProxyDef {
         this._adjustedUrl = "";
     }
 
-    public async checkLoggedComponents() {
+    public async checkLoggedComponents(t: TestController) {
         if (!this._config?.log) {
             return;
         }
@@ -58,21 +62,37 @@ class ui5ProxyDef {
             var aComp = sap.ui.core.Component.registry.all();
             var aCompList = [];
             for (var sComp in aComp) {
-                var sCompName = aComp[sComp].getMetadata().getName()
+                var sCompName = aComp[sComp].getMetadata().getComponentName();
                 if (sCompName.startsWith("sap.")) {
                     continue;
                 }
                 aCompList.push(sCompName.replace(/\./g, '/'));
             }
             return aCompList;
-        })();
+        }, { boundTestRun: t })();
 
         for (var i = 0; i < clientComp.length; i++) {
-            if (this._config?.debugComponents.indexOf(clientComp[i]) !== -1) {
+            if (this._config?.debugComponents?.indexOf(clientComp[i]) !== -1) {
                 continue;
             }
+            if (this._reportedLists[clientComp[i]]) {
+                continue;
+            }
+            this._reportedLists[clientComp[i]] = 1;
+        }
+    }
 
-            console.log("Component " + clientComp[i] + " might not have been instrumented, as not part of debug sources");
+    public logMissingComponents() {
+        if (!this._config?.log) {
+            return;
+        }
+
+        for (var sComp in this._reportedLists) {
+            if (this._reportedLists[sComp] === 2) {
+                continue;
+            }
+            this._reportedLists[sComp] = 2;
+            console.log("Component " + sComp + " might not have been instrumented, as not part of debug sources");
         }
     }
 
@@ -84,12 +104,12 @@ class ui5ProxyDef {
         if (this._coverageUrl !== "" && this._coverageUrl !== urlHost) {
             return this._adjustedUrl;
         } else if (this._coverageUrl === urlHost) {
-            this._basePath = config.basePath;
+            this._basePath = config.basePath ? config.basePath : "";
             return this._adjustedUrl;
         }
 
         this._coverageUrl = urlHost;
-        this._basePath = config.basePath;
+        this._basePath = config.basePath ? config.basePath : "";
 
         this._app = expressApp();
 
@@ -160,13 +180,60 @@ class ui5ProxyDef {
                         }
                         return proxyResData;
                     }
+                    if (proxyRes.req.path.indexOf(that._basePath) === -1) {
+                        if (that?._config?.log === true) {
+                            console.log("skipped " + proxyRes.req.path + " as it is not part of base Path " + that._basePath);
+                        }
+                        return proxyResData;
+                    }
+
+                    //do we have any whitelist?
+                    if (that?._config?.includePaths) {
+                        let bFound = false;
+                        for (let j = 0; j < that._config.includePaths.length; j++) {
+                            if (proxyRes.req.path.indexOf(that._config.includePaths[j]) !== -1) {
+                                bFound = true;
+                                break;
+                            }
+                        }
+                        if (bFound === false) {
+                            if (that?._config?.log === true) {
+                                console.log("skipped " + proxyRes.req.path + " as it is not part of include paths");
+                            }
+                            return proxyResData;
+                        }
+                    }
+                    if (that?._config?.excludePaths) {
+                        let bFound = false;
+                        for (let j = 0; j < that._config.excludePaths.length; j++) {
+                            if (proxyRes.req.path.indexOf(that._config.excludePaths[j]) !== -1) {
+                                bFound = true;
+                                break;
+                            }
+                        }
+                        if (bFound === true) {
+                            if (that?._config?.log === true) {
+                                console.log("skipped " + proxyRes.req.path + " as it is part of exclude paths");
+                            }
+                            return proxyResData;
+                        }
+                    }
+
+                    if (that?._fileCache[proxyRes.req.path]) {
+                        return that?._fileCache[proxyRes.req.path];
+                    }
 
                     if (that?._config?.log === true) {
                         console.log("instrument: " + proxyRes.req.path);
                     }
 
                     var pathname = proxyRes.req.path;
-                    const fileName = `${process.cwd()}/tmp/` + pathname;
+                    //pathname every now and than contains a "~" (cache variant) - remove paths containing this cache..
+                    if (pathname.indexOf("~") !== -1) {
+                        pathname = pathname.split("/").filter((e: string) => e.indexOf("~") === -1).join("/");
+                    }
+
+                    const fileName = `${process.env.APPDATA}/ui5-testcafe-selector-utils/tmp/` + pathname;
                     const fileNameArr = fileName.split('/');
                     fileNameArr.pop()
                     const dirName = fileNameArr.join('/')
@@ -184,6 +251,7 @@ class ui5ProxyDef {
                         }
                         return proxyResData;
                     }
+                    that._fileCache[proxyRes.req.path] = data;
                     return data;
                 },
                 userResHeaderDecorator: function (headers: any, userReq: any, userRes: any, proxyReq: any, proxyRes: any) {
