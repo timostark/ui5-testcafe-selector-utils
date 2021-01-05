@@ -7,7 +7,72 @@
     "properties": {
         "traceSelectorOnFailure": {
             "description": "In case of any failed test step the selector (which was present last) will be traced",
-            "type": "boolean"
+            "type": "boolean",
+            "default": "false"
+        },
+        "firstSelectorTimeout": {
+            "description": "The first UI5 selector timeout can be overwritten. This can be used to increase the timeout for the loading of the app.",
+            "type": "number",
+            "default": 60000
+        },
+        "tileOpeningTimeout": {
+            "description": "The first UI5 selector timeout can be overwritten. This can be used to increase the timeout for the loading of the app.",
+            "type": "number",
+            "default": 60000
+        },
+        "launchpad": {
+            "description": "Launchpad Configuration",
+            "type": "object",
+            "properties": {
+                "deactivateAnimation": {
+                    "description": "Deactivates UI5 animation after login",
+                    "type": "boolean",
+                    "default": "false"
+                }
+            }
+        },
+        "coverage": {
+            "description": "Coverage Configuration",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Enables Coverage Information",
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "log": {
+                    "description": "Logs information about code instrumentation",
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "proxy": {
+                    "description": "Creates a proxy server, which instruments code on the fly. Do only use if you want to use code coverage during e2e tests",
+                    "type": "boolean",
+                    "default": "false"
+                },
+                "basePath": {
+                    "description": "Base path of files to be instrumented",
+                    "type": "string",
+                    "default": ""
+                },
+                "type": {
+                    "description": "Output type of coverage report",
+                    "type": "string",
+                    "default": "html"
+                },
+                "debugComponents": {
+                    "description": "Components to add to sap-ui-debug URL path, so that they can be instrumented",
+                    "type": "array"
+                },
+                "includePaths": {
+                    "description": "Whitelisted include Paths inside the base path",
+                    "type": "array"
+                },
+                "excludePaths": {
+                    "description": "Blacklisted exclude Paths inside the base path",
+                    "type": "array"
+                }
+            }
         }
     }
 }

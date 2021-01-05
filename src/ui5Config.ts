@@ -29,6 +29,7 @@ export interface ui5Configuration {
     launchpad?: ui5LaunchpadConfiguration;
     firstSelectorTimeout: number;
     traceSelectorOnFailure: boolean;
+    tileOpeningTimeout: number;
 };
 
 class ui5ConfigDef {
@@ -53,7 +54,9 @@ class ui5ConfigDef {
                 launchpad: {
                     deactivateAnimation: false
                 },
-                firstSelectorTimeout: 40000,
+                firstSelectorTimeout: 60000,
+                tileOpeningTimeout: 60000,
+
                 traceSelectorOnFailure: false
             };
         }
@@ -83,6 +86,7 @@ class ui5ConfigDef {
             this._config.launchpad.deactivateAnimation = false;
         }
 
+        this._config.tileOpeningTimeout = this._config.tileOpeningTimeout ? this._config.tileOpeningTimeout : 40000;
         this._config.firstSelectorTimeout = this._config.firstSelectorTimeout ? this._config.firstSelectorTimeout : 40000;
         this._config.coverage.enabled = process.env.UI5_COVERAGE_ENABLED ? process.env.UI5_COVERAGE_ENABLED === "true" : this._config.coverage.enabled;
         this._config.traceSelectorOnFailure = typeof this._config.traceSelectorOnFailure === "undefined" ? false : this._config.traceSelectorOnFailure;
@@ -94,6 +98,10 @@ class ui5ConfigDef {
 
     get firstSelectorTimeout(): number {
         return this._config.firstSelectorTimeout;
+    }
+
+    get tileOpeningTimeout(): number {
+        return this._config.tileOpeningTimeout;
     }
 
     get launchpad(): ui5LaunchpadConfiguration {

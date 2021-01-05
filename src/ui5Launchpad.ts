@@ -38,7 +38,7 @@ class ui5LaunchpadDef {
     }
 
     async openTile(sHash: string) {
-        await ui5Action.click(ui5("Launchpad-Tile " + sHash).genericTile().parentProperty("target", sHash));
+        await ui5Action.click(ui5("Launchpad-Tile " + sHash).genericTile().parentProperty("target", sHash).timeout(ui5Config.tileOpeningTimeout));
     }
 }
 
