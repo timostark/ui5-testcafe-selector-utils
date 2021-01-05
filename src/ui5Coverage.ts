@@ -1,6 +1,9 @@
-import { spawn } from "child_process";
+import { ui5Config } from "./ui5Config";
 
-var istanbul = require('istanbul-lib-coverage');
+var istanbul: any = null;
+if (ui5Config.coverage.enabled) {
+    istanbul = require('istanbul-lib-coverage');
+}
 
 class ui5CoverageDef {
     private _coverageInformation: any;

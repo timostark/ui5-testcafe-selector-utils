@@ -1,11 +1,14 @@
 
+
 var colors = require('colors/safe');
+
 import { ClientFunction, Selector, t } from "testcafe";
 import { ui5, ui5Config } from ".";
 import { ui5AssertDef, ui5AssertOperator, ui5AssertOperatorExists, ui5AssertOperatorVisible, ui5AssertOperatorCount } from "./ui5Asserts";
 import { UI5BaseBuilder, UI5ChainSelection, UI5StepBaseLib } from "./ui5Builder";
 
 const rqTrack = require("testcafe/lib/api/test-run-tracker");
+
 
 enum ui5StepType {
     UNDEFINED = 0,
@@ -37,6 +40,7 @@ enum ui5StepType {
     SWITCH_TO_IFRAME = 26,
     SET_NATIVE_DIALOG_HANDLER = 27,
     OPEN_WINDOW = 28,
+    DEBUG = 29
 };
 
 enum ui5StepStatus {
@@ -170,6 +174,7 @@ class ui5StepsDef {
         if (selector) {
             sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
         }
+
         var bUI5Selector = selector instanceof UI5BaseBuilder ? true : false;
         var bIsTraceSelector = selector instanceof UI5BaseBuilder && selector.isTraced() ? true : false;
         var sCurTestName = this.getCurrentTestName(t);
@@ -292,7 +297,7 @@ export interface ui5SupportAssistantAssertion {
 };
 
 interface ui5ActionDefIntf {
-    debugSelector(elementId: string): Promise<void>;
+    debugSelector(): Promise<void>;
     traceSelector(selector: UI5ChainSelection, traceOptions?: ui5TraceOptions): Promise<void>;
     pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise;
     blur(): ui5ActionDefPromise;
@@ -308,6 +313,8 @@ interface ui5ActionDefIntf {
     typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise;
     clearText(selector: UI5ChainSelection | Selector): ui5ActionDefPromise;
     expect(selector: UI5ChainSelection | any): ui5AssertDef;
+    debug(): ui5ActionDefPromise;
+
     expectAny(selector: any): ui5AssertOperator;
     expectVisible(selector: UI5ChainSelection): ui5AssertOperatorVisible;
     expectProperty(selector: UI5ChainSelection, propName: string): ui5AssertOperator;
@@ -335,8 +342,8 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
         return ui5ActionDef.instances[0];
     }
 
-    public async debugSelector(elementId: string): Promise<void> {
-        return this.getRunDef().debugSelector(elementId);
+    public async debugSelector(): Promise<void> {
+        return this.getRunDef().debugSelector();
     }
 
     public async deactivateAnimation(): Promise<void> {
@@ -354,6 +361,9 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
         return this.getRunDef().pressKey(keys, options);
     }
 
+    public debug(): ui5ActionDefPromise {
+        return this.getRunDef().debug();
+    }
     public blur(): ui5ActionDefPromise {
         return this.getRunDef().blur();
     }
@@ -439,12 +449,21 @@ class ui5ActionDef implements ui5ActionDefIntf {
         return this.lclTestRun;
     }
 
-    public async debugSelector(elementId: string) {
-        const fnWaitLoaded = ClientFunction((elementId) => {
-            // @ts-ignore
-            window["__ui5SelectorDebug"] = elementId;
+    public async debugSelector() {
+        const cntStart = ClientFunction(function () {
+            //@ts-ignore
+            sap.m.MessageToast.show("Please press 'Unlock' and afterwards 'Resume'");
         });
-        await fnWaitLoaded(elementId);
+        const cntWaitLodaed = ClientFunction(() => {
+            // @ts-ignore
+            window.ui5TestCafeSelector.startRecordMode();
+            return new Promise(function (resolve, reject) {
+
+            });
+        });
+        await cntStart();
+        await this.t.debug();
+        await cntWaitLodaed();
     }
 
 
@@ -559,6 +578,16 @@ class ui5ActionDef implements ui5ActionDefIntf {
         return <any>oProm;
     }
 
+    public async traceSel(): Promise<ui5SupportAssistantIssue[]> {
+        const oSupportAssistant = ClientFunction((): ui5SupportAssistantIssue[] => {
+            //@ts-ignore
+            return ui5TestCafeSelector.runSupportAssistant();
+        });
+        const supportAssistantResults = await oSupportAssistant();
+        return supportAssistantResults;
+    }
+
+
     public async runSupportAssistant(): Promise<ui5SupportAssistantIssue[]> {
         const oSupportAssistant = ClientFunction((): ui5SupportAssistantIssue[] => {
             //@ts-ignore
@@ -622,6 +651,20 @@ class ui5ActionDef implements ui5ActionDefIntf {
         let oAction = ui5Steps.addStep(this.t, ui5StepType.RIGHT_CLICK, ui5StepStatus.QUEUED, selector);
 
         var oProm = this.t.rightClick(this._getSelector(selector, oAction), options);
+        oProm = this._delegateAPIToPromise(this, oProm);
+
+        oProm.then(function () { //dmmy..
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.PROCESSED);
+        }, function () {
+            ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
+        });
+        return <any>oProm;
+    }
+
+    public debug(): ui5ActionDefPromise {
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.DEBUG, ui5StepStatus.QUEUED);
+
+        var oProm = this.t.debug();
         oProm = this._delegateAPIToPromise(this, oProm);
 
         oProm.then(function () { //dmmy..

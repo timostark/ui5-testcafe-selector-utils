@@ -311,6 +311,44 @@ ui5TestCafeSelectorDef.prototype._getLabelForItem = function (oItem) {
     return (aItems && aItems[oItem.getId()]) ? aItems[oItem.getId()] : null;
 };
 
+
+ui5TestCafeSelectorDef.prototype.getControlFromDom = function (oDOMNode) {
+    // predefine resulting element ID
+    var sResultID;
+
+    // if we do not have DOM node to work with
+    if (!oDOMNode) {
+        return null;
+    }
+
+    if (Array.isArray(oDOMNode)) {
+        oDOMNode = oDOMNode[0];
+    }
+    if (oDOMNode instanceof NodeList) {
+        oDOMNode = oDOMNode[0];
+    }
+    var oCurrentCandidate = oDOMNode;
+    do {
+        if (oCurrentCandidate.hasAttribute("data-sap-ui-related")) {
+            sResultID = oCurrentCandidate.getAttribute("data-sap-ui-related");
+            break;
+        }
+        if (oCurrentCandidate.hasAttribute("data-sap-ui")) {
+            sResultID = oCurrentCandidate.getAttribute("id");
+            break;
+        }
+        oCurrentCandidate = oCurrentCandidate.parentNode;
+
+    } while (oCurrentCandidate);
+    if (!sResultID) {
+        return null;
+    }
+
+    // obtain and return UI5 control by the ID we found
+    //@ts-ignore
+    return _wnd.sap.ui.getCore().byId(sResultID);
+}
+
 ui5TestCafeSelectorDef.prototype._getUi5Id = function (oItem) {
     //remove all component information from the control
     let oParent = oItem;
@@ -1682,7 +1720,7 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     if (oReturn.metadata.interactable.busy === false &&
         oReturn.metadata.interactable.needsRerendering === false &&
         oReturn.metadata.interactable.blocked === false &&
-        oReturn.metadata.interactable.enabled === true &&
+        (oReturn.metadata.interactable.enabled === true || oReturn.metadata.interactable.enabled === null) &&
         oReturn.metadata.interactable.visible === true &&
         oReturn.metadata.interactable.nonZeroSize === true) {
         oReturn.metadata.interactable.interactable = true;
@@ -1701,18 +1739,6 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
             oReturn.metadata.componentId = oApp.id;
             oReturn.metadata.componentTitle = oApp.title;
             oReturn.metadata.componentDescription = oApp.description;
-            if (oApp.dataSources) {
-                for (let sDs in oApp.dataSources) {
-                    let oDS = oApp.dataSources[sDs];
-                    if (oDS.type !== "OData") {
-                        continue;
-                    }
-                    oReturn.metadata.componentDataSource[sDs] = {
-                        uri: oDS.uri,
-                        localUri: (oDS.settings && oDS.settings.localUri) ? oDS.settings.localUri : ""
-                    };
-                }
-            }
         }
     }
 
@@ -2086,5 +2112,216 @@ ui5TestCafeSelectorDef.prototype.getDomNodeInformation = function (oDomNode, fnC
     let oItem = aItem[0];
     return this.getElementInformation(oItem, oDomNode, fnCallback);
 };
+
+
+ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function () {
+    if (this._oTableSelectDialog) {
+        return this._oTableSelectDialog;
+    }
+
+    var fnDoSearch = function (oEvent) {
+        var sSearchValue = oEvent.getParameter("value"),
+            itemsBinding = oEvent.getParameter("itemsBinding");
+
+        // create the local filter to apply
+        if (sSearchValue !== undefined && sSearchValue.length > 0) {
+            //@ts-ignore
+            itemsBinding.filter(new sap.ui.model.Filter({
+                and: false,
+                filters: [
+                    //@ts-ignore
+                    new sap.ui.model.Filter("type", sap.ui.model.FilterOperator.Contains, sSearchValue),
+                    //@ts-ignore
+                    new sap.ui.model.Filter("name", sap.ui.model.FilterOperator.Contains, sSearchValue),
+                    //@ts-ignore
+                    new sap.ui.model.Filter("value", sap.ui.model.FilterOperator.Contains, sSearchValue)
+                ]
+            }))
+        } else {
+            itemsBinding.filter([]);
+        }
+    };
+
+    //@ts-ignore
+    this._oTableSelectDialog = new sap.m.TableSelectDialog("TableSelectDialog1", {
+        title: "Attributes",
+        noDataText: "No Attributes available",
+        search: fnDoSearch,
+        liveChange: fnDoSearch,
+        columns: [
+            //@ts-ignore
+            new sap.m.Column({
+                hAlign: "Center",
+                //@ts-ignore
+                header: new sap.m.Label({
+                    text: "Type"
+                })
+            }),
+            //@ts-ignore
+            new sap.m.Column({
+                hAlign: "Center",
+                //@ts-ignore
+                header: new sap.m.Label({
+                    text: "Name"
+                })
+            }),
+            //@ts-ignore
+            new sap.m.Column({
+                hAlign: "Center",
+                //@ts-ignore
+                header: new sap.m.Label({
+                    text: "Value"
+                })
+            })
+        ]
+    });
+
+    // create the template for the items binding
+    //@ts-ignore
+    var oItemTemplate1 = new sap.m.ColumnListItem({
+        type: "Active",
+        unread: false,
+        cells: [
+            //@ts-ignore
+            new sap.m.Text({
+                text: "{type}"
+            }),
+            //@ts-ignore
+            new sap.m.Text({
+                text: "{name}"
+            }),
+            //@ts-ignore
+            new sap.m.Text({
+                text: "{value}"
+            })
+        ]
+    });
+
+    this._oTableSelectDialog.bindAggregation("items", "/items", oItemTemplate1);
+    return this._oTableSelectDialog;
+};
+
+ui5TestCafeSelectorDef.prototype.onClickInRecordMode = function (oDomNode) {
+    var oItem = this.getControlFromDom(oDomNode);
+    var oData = this.getElementInformation(oItem, oDomNode);
+
+    //match to possible selector attributes of this element..
+    bInTable = true;
+    var oOutput = {
+        identifier: oData.identifier,
+        metadata: oData.metadata,
+        property: oData.property,
+        positionInParent: oData.positionInParent,
+        tableSettings: oData.tableSettings,
+        smartContext: oData.smartContext,
+        binding: oData.binding,
+        bindingContext: oData.bindingContext,
+        lumiraProperty: oData.lumiraProperty,
+        childrenCount: oData.childrenCount,
+        sac: oData.sac,
+        customData: oData.customData
+    };
+    if (oOutput.binding) {
+        for (var sNm in oOutput.binding) {
+            oOutput.binding[sNm] = oOutput.binding[sNm].path;
+        }
+    }
+
+    //travese into simple table mode..
+    var aOutput = [];
+    var fnAddToOutput = function (sPattern, oObj) {
+        for (var sObj in oObj) {
+            var sValue = oObj[sObj];
+            if (typeof sValue === "object") {
+                sValue = JSON.stringify(sValue);
+            }
+            if (!sValue) {
+                continue;
+            }
+            aOutput.push({
+                type: sPattern,
+                name: sObj,
+                value: sValue
+            });
+        }
+    };
+
+    for (var sLine in oOutput) {
+        //@ts-ignore
+        if ($.isArray(oOutput[sLine])) {
+            for (var i = 0; i < oOutput[sLine]; i++) {
+                fnAddToOutput(sLine, oOutput[sLine][i]);
+            }
+        } else {
+            fnAddToOutput(sLine, oOutput[sLine]);
+        }
+    }
+
+
+    //@ts-ignore
+    var oSelDialog = this._getTableSelectDialog();
+    var oMdl = new sap.ui.model.json.JSONModel({ items: aOutput });
+    oSelDialog.setModel(oMdl);
+    oSelDialog.open();
+    this._bSelectDialogIsOpen = true;
+
+    oSelDialog.attachClose(function () {
+        this._bSelectDialogIsOpen = false;
+    }.bind(this));
+};
+
+ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
+    //@ts-ignore
+    $("<style type='text/css'>.UI5TR_ElementHover,\
+            .UI5TR_ElementHover * {\
+                background: rgba(193, 137, 156,0.5)!important;\
+            }\
+            \
+                .UI5TR_ControlFound,\
+            .UI5TR_ControlFound * {\
+                background: rgba(113, 148, 175,0.5)!important;\
+            }\
+            \
+            #UI5TR_BusyDialog - Dialog.sapUiLocalBusyIndicatorAnimation > div:: before {\
+            \
+            background: #a01441; \
+        } \
+        </style > ").appendTo("head");
+
+
+    var that = this;
+    this._bSelectDialogIsOpen = false;
+
+    document.onmouseover = function (e) {
+        if (that._bSelectDialogIsOpen === true) {
+            return;
+        }
+        //@ts-ignore
+        var e = e || window.event,
+            el = e.target || e.srcElement;
+        //@ts-ignore
+        el.classList.add("UI5TR_ElementHover");
+    };
+
+    document.onmouseout = function (e) {
+        //@ts-ignore
+        var e = e || _wnd.window.event,
+            el = e.target || e.srcElement;
+        //@ts-ignore
+        el.classList.remove("UI5TR_ElementHover");
+    }
+
+
+    document.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        event = event || window.event;
+        var el = event.target || event.srcElement;
+        window.ui5TestCafeSelector.onClickInRecordMode(el);
+
+    }, true);
+}
 
 window.ui5TestCafeSelector = new ui5TestCafeSelectorDef();

@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/timostark/ui5-testcafe-selector-utils/main/.ui5-testcafe.json",
+    "title": "UI5 Testcafe",
+    "description": "A schema for UI5 testcafe",
+    "type": "object",
+    "properties": {
+        "traceSelectorOnFailure": {
+            "description": "In case of any failed test step the selector (which was present last) will be traced",
+            "type": "boolean"
+        }
+    }
+}

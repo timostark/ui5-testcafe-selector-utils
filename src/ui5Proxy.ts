@@ -1,11 +1,20 @@
-import { ClientFunction } from "testcafe";
-import { ui5CoverageConfiguration } from "./ui5Config";
 
-let proxy = require('express-http-proxy');
-var expressApp = require('express');
-const fs = require('fs');
-const im = require('istanbul-lib-instrument');
-var Url = require('url-parse');
+import { ClientFunction } from "testcafe";
+import { ui5CoverageConfiguration, ui5Config } from "./ui5Config";
+
+let proxy: any = null;
+let expressApp: any = null;
+let fs: any = null;
+let im: any = null;
+let Url: any = null;
+
+if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
+    proxy = require('express-http-proxy');
+    expressApp = require('express');
+    fs = require('fs');
+    im = require('istanbul-lib-instrument');
+    Url = require('url-parse');
+}
 
 class ui5ProxyDef {
     private _coverageUrl: string = "";
@@ -26,7 +35,7 @@ class ui5ProxyDef {
         this._bCoverageStarted = false;
         this._reportedLists = {};
         this._fileCache = {};
-        this._instrumenter = im.createInstrumenter();
+        this._instrumenter = im ? im.createInstrumenter() : null;
     }
 
     private _matcher(url: string) {

@@ -125,10 +125,12 @@ interface UI5DataResultBase {
      * Identification information, mostly related about ID (getId()) information
      */
     identifier?: UI5SelectorDefIdentification,
+
     /**
      * Metadata-Information about the control itself
      */
     metadata?: UI5SelectorDefMetadata,
+
     /**
      * Contains information about related aggregations - structure:
      * AGGREGATION_NAME { length: the length of the aggregation }
@@ -136,6 +138,7 @@ interface UI5DataResultBase {
      * Example: { items: { length: 3 }}
      */
     aggregation?: any,
+
     /**
      * Contains information about related associations - structure:
      * ASSOCIATION_NAME { context: { same structure as binding contexts } }
