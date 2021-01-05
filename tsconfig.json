@@ -6,6 +6,11 @@
     "declaration": true,
     "outDir": "dist",
     "strict": true,
+    "sourceMap": true,
+    "allowJs": false,
+    "types": [
+      "testcafe"
+    ],
     "esModuleInterop": true
   },
   "exclude": [

@@ -2,58 +2,54 @@ import {
     Selector,
     t
 } from "testcafe";
-import {
-    UI5DataCallback,
-    UI5Selector, UI5SelectorDef
-} from "ui5-testcafe-selector";
-import { ui5ActionDef } from "./ui5Action";
-import { ui5AssertDef, ui5Assert, ui5AssertOperator, ui5AssertOperatorVisible } from "./ui5Asserts";
+import { UI5DataResult, UI5Selector, UI5DataCallback, UI5SelectorDef } from "./ui5Selector";
+import { ui5AssertDef, ui5Assert, ui5AssertOperator, ui5AssertOperatorVisible, ui5AssertOperatorExists } from "./ui5Asserts";
+
+export enum ui5SACWidgetType {
+    Chart = 1,
+    Table = 2,
+    Text = 3
+}
+
+export abstract class UI5StepBaseLib {
+    abstract data(f?: UI5DataCallback): Promise<UI5DataResult>;
+    abstract dataSync(f?: UI5DataCallback): Promise<UI5DataResult>;
+    abstract format(): string;
+}
 
 export abstract class UI5BaseBuilderIntf {
-    public _id: any;
-    public _domQuery: string = "";
-    public _name: string = "";
-
-
-    abstract format(): string;
-    abstract build(bInteractRequired?: boolean): Selector;
-    abstract property(propertyName: string, propertyValue: any): any;
-    abstract interactable(): any;
-    // @ts-ignore
-    abstract async data(f?: UI5DataCallback): Promise<UI5SelectorDef>;
-    abstract dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef>;
-    abstract comboBox(): UI5ComboBoxChainSelection;
-    abstract parent(parent?: UI5BaseBuilderIntf): any;
+    protected _id: any;
+    protected _domQuery: string = "";
+    protected _name: string = "";
+    protected _timeout?: number;
+    protected _hasTimeout: boolean = false;
+    protected _trace: boolean = false;
+    protected _sBasisObj: string = "";
 };
 
-export class UI5AnyValueBuilder extends UI5BaseBuilderIntf {
+
+export class UI5AnyValueBuilder implements UI5StepBaseLib {
     public _value: any;
 
-    format() { return ""; }
-    build(bInteractRequired?: boolean): Selector { return Selector(""); }
-    property(propertyName: string, propertyValue: any): any { return this; }
-    interactable(): any { return this; }
-    // @ts-ignore
-    async data(f?: UI5DataCallback): Promise<UI5SelectorDef> {
+    format(): string {
+        return "any value";
+    }
+
+    async data(f?: UI5DataCallback): Promise<UI5DataResult> {
         return this._value;
     }
 
-    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef> {
+    dataSync(f?: UI5DataCallback): Promise<UI5DataResult> {
         return this._value;
     }
-
-    comboBox() { return new UI5ComboBoxChainSelection(this); }
-    parent(parent?: UI5BaseBuilderIntf) { return this; };
 
     constructor(val: any) {
-        super();
         this._value = val;
     }
 }
 
-export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5BaseBuilderIntf {
+export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
-
     protected thisPointer: B;
 
     constructor(chain?: any) {
@@ -63,8 +59,12 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         this._id = {};
 
         if (chain && chain instanceof UI5BaseBuilderIntf) {
-            this._id = chain._id;
-            this._name = chain._name;
+            this._id = (<any>chain)._id;
+            this._name = (<any>chain)._name;
+            this._domQuery = (<any>chain)._domQuery;
+            this._hasTimeout = (<any>chain)._hasTimeout;
+            this._timeout = (<any>chain)._timeout;
+            this._trace = (<any>chain)._trace;
         } else if (chain && typeof chain == "string") {
             this._name = chain;
         }
@@ -84,6 +84,9 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     multiInput(): B {
         return this.element("sap.m.MultiInput");
     }
+    listItem(): B {
+        return this.element("sap.m.ListItemBase");
+    }
     genericTile(): B {
         return this.element("sap.m.GenericTile");
     }
@@ -98,10 +101,6 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     }
     list(): UI5ListChainSelection {
         return new UI5ListChainSelection(this.element("sap.m.List"));
-    }
-
-    tableRow(): UI5TableRowChainSelection {
-        return new UI5TableRowChainSelection(this.element("sap.ui.table.Row").insideATable());
     }
 
     messageToast(): UI5MessageToast {
@@ -120,7 +119,18 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
     interactable(): B {
         this._id = this._enhanceWith(this._id, {
             metadata: {
-                interactable: true
+                interactable: {
+                    interactable: true
+                }
+            }
+        });
+        return this.thisPointer;
+    }
+
+    id(id: string): B {
+        this._id = this._enhanceWith(this._id, {
+            identifier: {
+                id: id
             }
         });
         return this.thisPointer;
@@ -140,11 +150,120 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         var oPath: any = {};
         oPath[attribute] = path;
         this._id = this._enhanceWith(this._id, {
-            bindingPath: oPath
+            binding: oPath
         });
         return this.thisPointer;
     }
 
+    protected _isObject(item: any) {
+        return (item && typeof item === 'object' && !Array.isArray(item));
+    }
+
+    protected _mergeDeep(target: any, ...sources: any): any {
+        if (!sources.length) return target;
+        const source = sources.shift();
+
+        if (this._isObject(target) && this._isObject(source)) {
+            for (const key in source) {
+                if (this._isObject(source[key])) {
+                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    this._mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
+        return this._mergeDeep(target, ...sources);
+    }
+
+    protected _enhanceWith(id: any, enhanceWith: any): any {
+        let oEnhanceBasis: any = {};
+        if (typeof id === "string") {
+            oEnhanceBasis.identifier.id = id;
+        }
+        let oEnhance: any = enhanceWith;
+        if (this._sBasisObj !== "") {
+            oEnhance = {};
+            oEnhance[this._sBasisObj] = enhanceWith;
+        }
+        oEnhanceBasis = this._mergeDeep(id, oEnhance);
+        return oEnhanceBasis;
+    }
+    property(propertyName: string, propertyValue: any): B {
+        var oPath: any = {};
+        oPath[propertyName] = propertyValue;
+        this._id = this._enhanceWith(this._id, {
+            property: oPath
+        });
+        return this.thisPointer;
+    }
+    context(path: string, value: any): B {
+        var oProp: any = {};
+        oProp[path] = value;
+        this._id = this._enhanceWith(this._id, {
+            smartContext: oProp
+        });
+        return this.thisPointer;
+    }
+
+    cssValue(cssAttribute: string, value: string): B {
+        var oEnhance = <any>{};
+        oEnhance[cssAttribute] = value;
+        this._id = this._enhanceWith(this._id, {
+            cssValue: oEnhance
+        });
+
+        return this.thisPointer;
+    }
+
+    positionInParent(position: number): B {
+        this._id = this._enhanceWith(this._id, {
+            positionInParent: position
+        });
+
+        return this.thisPointer;
+    }
+
+    styleClass(styleClass: string): B {
+        this._id = this._enhanceWith(this._id, {
+            styleClass: [styleClass]
+        });
+
+        return this.thisPointer;
+    }
+
+    customData(id: string, value?: string): B {
+        var oEnhance = <any>{};
+        oEnhance[id] = value;
+        this._id = this._enhanceWith(this._id, {
+            customData: oEnhance
+        });
+
+        return this.thisPointer;
+    }
+
+    localViewName(viewName: string): B {
+        this._id = this._enhanceWith(this._id, {
+            viewProperty: { localViewName: viewName }
+        });
+        return this.thisPointer;
+    }
+
+    sacWidget(widgetType: ui5SACWidgetType): UI5SACWidgetChainSelection {
+        if (widgetType === ui5SACWidgetType.Chart) {
+            new UI5SACWidgetChainSelection(this.element(["sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget"]));
+        } else if (widgetType === ui5SACWidgetType.Table) {
+
+        } else if (widgetType === ui5SACWidgetType.Text) {
+
+        }
+
+        return new UI5SACWidgetChainSelection(this.thisPointer);
+    }
+
+}
+
+export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5ParentBuilder<B> {
     itemdata(itemPropertyName: string, itemPropertyValue: any): B {
         var oPath: any = {};
         oPath[itemPropertyName] = itemPropertyValue;
@@ -156,15 +275,6 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
-    property(propertyName: string, propertyValue: any): B {
-        var oPath: any = {};
-        oPath[propertyName] = propertyValue;
-        this._id = this._enhanceWith(this._id, {
-            property: oPath
-        });
-        return this.thisPointer;
-    }
-
     parentId(id: string): B {
         this._id = this._enhanceWith(this._id, {
             parentAnyLevel: {
@@ -172,15 +282,6 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
                     id: id
                 }
             }
-        });
-        return this.thisPointer;
-    }
-
-    context(path: string, value: any): B {
-        var oProp: any = {};
-        oProp[path] = value;
-        this._id = this._enhanceWith(this._id, {
-            smartContext: oProp
         });
         return this.thisPointer;
     }
@@ -207,16 +308,53 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
-    domChildWith(sDomWith: string): B {
+    enhancedData(custData: any): B {
         this._id = this._enhanceWith(this._id, {
-            domChildWith: sDomWith
+            enhancedData: custData
         });
+
         return this.thisPointer;
     }
 
-    localViewName(viewName: string): B {
+
+    childWithId(id: string): B {
         this._id = this._enhanceWith(this._id, {
-            viewProperty: { localViewName: viewName }
+            hasChildWith: {
+                id: id
+            }
+        });
+
+        return this.thisPointer;
+    }
+
+    tableRow(): UI5TableRowChainSelection {
+        return new UI5TableRowChainSelection(this.element("sap.ui.table.Row").insideATable());
+    }
+
+    childWithClassName(className: string): B {
+        this._id = this._enhanceWith(this._id, {
+            hasChildWith: {
+                className: className
+            }
+        });
+
+        return this.thisPointer;
+    }
+
+    childrenCount(cnt: number, className?: string): B {
+        this._id = this._enhanceWith(this._id, {
+            childrenCount: {
+                count: cnt,
+                className: className
+            }
+        });
+
+        return this.thisPointer;
+    }
+
+    domChildWith(sDomWith: string): B {
+        this._id = this._enhanceWith(this._id, {
+            domChildWith: sDomWith
         });
         return this.thisPointer;
     }
@@ -272,28 +410,62 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return this.thisPointer;
     }
 
-    parent(parent: UI5BaseBuilderIntf): B {
-        if (parent._id && parent._id.identifier && parent._id.identifier.id) {
-            this.parentId(parent._id.identifier.id);
-        }
-        if (parent._id && parent._id.metadata && parent._id.metadata.elementName) {
-            this.parentElementName(parent._id.metadata.elementName);
-        }
+    selectAll(): B {
+        this._id = this._enhanceWith(this._id, {
+            selectAll: true
+        });
         return this.thisPointer;
     }
 
-    id(id: string): B {
+    fnData(fnEnhance: (ui5Element: any, retData: UI5DataResult) => any): B {
         this._id = this._enhanceWith(this._id, {
-            identifier: {
-                id: id
+            functions: {
+                enhancedData: fnEnhance.toString()
             }
         });
+        return this.thisPointer;
+    }
+
+    fnSelect(fnCheck: (ui5Element: any, selDef?: UI5DataResult, getElemInfo?: () => UI5DataResult) => boolean): B {
+        this._id = this._enhanceWith(this._id, {
+            functions: {
+                checkItem: fnCheck.toString()
+            }
+        });
+        return this.thisPointer;
+    }
+
+    parent(parent: UI5ParentSelection): B {
+        //take over all element names
+        let _idParent: any = (<any>parent)._id;
+
+        this._sBasisObj = "parentAnyLevel";
+        this._id = this._enhanceWith(this._id, _idParent);
+        return this.thisPointer;
+    }
+
+    child(child: UI5ChildSelection): B {
+        //take over all element names
+        let _idChild: any = (<any>child)._id;
+
+        this._sBasisObj = "atLeastOneChild";
+        this._id = this._enhanceWith(this._id, _idChild);
         return this.thisPointer;
     }
 
     domQuery(id: string): B {
         this._domQuery = id;
         return this.thisPointer;
+    }
+
+    timeout(iTimeout: number): B {
+        this._timeout = iTimeout;
+        this._hasTimeout = true;
+        return this.thisPointer;
+    }
+
+    hasOwnTimeout(): boolean {
+        return this._hasTimeout;
     }
 
     name(id: string): B {
@@ -310,41 +482,59 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
         return sName;
     }
 
-    /** actions */
-    async data(f?: UI5DataCallback): Promise<UI5SelectorDef> {
-        await this.build(); //first wait until we generally see the element..
-        if (f) {
-            return this.build().getUI5(f);
+    private getEnhanceFunction(): string | undefined {
+        if (this._id && this._id.functions && this._id.functions.enhancedData) {
+            return this._id.functions.enhancedData;
         }
-        return this.build().getUI5();
+        return undefined;
     }
 
-    dataSync(f?: UI5DataCallback): Promise<UI5SelectorDef> {
-        return this.build().getUI5(f);
+    /** actions */
+    async data(f?: UI5DataCallback): Promise<UI5DataResult> {
+        await this.build(); //first wait until we generally see the element..
+        let oSelector = <UI5SelectorDef>this.build();
+
+        if (typeof oSelector.getUI5 !== "undefined") {
+            if (f) {
+                return oSelector.getUI5(f, this.getEnhanceFunction());
+            }
+            return oSelector.getUI5(undefined, this.getEnhanceFunction());
+        }
+        return {};
+    }
+
+    dataSync(f?: UI5DataCallback): Promise<UI5DataResult> {
+        let oSelector = <UI5SelectorDef>this.build();
+        if (typeof oSelector.getUI5 !== "undefined") {
+            return oSelector.getUI5(f);
+        }
+        return new Promise((resolve) => {
+            resolve({});
+        });
     }
 
     /** expects */
     expectProperty(property: string): ui5AssertOperator {
-        return this.expect.property(property);
+        return this.expect().property(property);
     }
     expectVisible(bExpectInteractable: boolean = true): ui5AssertOperatorVisible {
-        return this.expect.visible(bExpectInteractable);
+        return this.expect().visible(bExpectInteractable);
     }
-    expectExists(): ui5AssertOperator {
-        return this.expect.exists();
+    expectExists(): ui5AssertOperatorExists {
+        return this.expect().exists();
     }
-    expectElement(prop: (e: UI5SelectorDef) => any): ui5AssertOperator {
-        return this.expect.element(prop);
+    expectDynamic(prop: (e: UI5DataResult) => any): ui5AssertOperator {
+        return this.expect().dynamic(prop);
     }
 
-    get expect(): ui5AssertDef {
-        return ui5Assert(this, t);
+    expect(): ui5AssertDef {
+        return ui5Assert(this);
     }
 
     /** helpers.. */
-    build(bInteractRequired?: boolean): Selector {
+    build(bInteractRequired?: boolean, timeout?: number): Selector {
         if (this._domQuery) {
-            return Selector(this._domQuery);
+            return Selector(this._domQuery)
         }
 
         if (bInteractRequired === true) {
@@ -352,37 +542,29 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Bas
             this.interactable();
         }
 
-        return UI5Selector(this._id);
-    }
-    protected _isObject(item: any) {
-        return (item && typeof item === 'object' && !Array.isArray(item));
+        //hmmm.. probably not a good idea ?
+        return <Selector><any>UI5Selector(timeout)(this._id);
     }
 
-    protected _mergeDeep(target: any, ...sources: any): any {
-        if (!sources.length) return target;
-        const source = sources.shift();
-
-        if (this._isObject(target) && this._isObject(source)) {
-            for (const key in source) {
-                if (this._isObject(source[key])) {
-                    if (!target[key]) Object.assign(target, { [key]: {} });
-                    this._mergeDeep(target[key], source[key]);
-                } else {
-                    Object.assign(target, { [key]: source[key] });
-                }
-            }
-        }
-        return this._mergeDeep(target, ...sources);
+    trace(): B {
+        this._trace = true;
+        return this.thisPointer;
     }
 
-    protected _enhanceWith(id: any, enhanceWith: any): any {
-        let oEnhanceBasis: any = {};
-        if (typeof id === "string") {
-            oEnhanceBasis.identifier.id = id;
-        } else {
-            oEnhanceBasis = this._mergeDeep(id, enhanceWith);
-        }
-        return oEnhanceBasis;
+    isTraced(): boolean {
+        return this._trace;
+    }
+}
+
+export class UI5ParentSelection extends UI5ParentBuilder<UI5ParentSelection> {
+    getThisPointer(): UI5ParentSelection {
+        return this;
+    }
+}
+
+export class UI5ChildSelection extends UI5ParentBuilder<UI5ChildSelection> {
+    getThisPointer(): UI5ChildSelection {
+        return this;
     }
 }
 
@@ -425,6 +607,22 @@ export class UI5CoreItemSelection extends UI5BaseBuilder<UI5CoreItemSelection> {
         return this.property("key", key);
     }
 }
+
+export class UI5SACWidgetChainSelection extends UI5BaseBuilder<UI5SACWidgetChainSelection> {
+    getThisPointer(): UI5SACWidgetChainSelection {
+        return this;
+    }
+
+    widgetId(id: string): UI5SACWidgetChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                widgetId: id
+            }
+        });
+        return this.thisPointer;
+    }
+}
+
 
 export class UI5ComboBoxChainSelection extends UI5BaseBuilder<UI5ComboBoxChainSelection> {
     getThisPointer(): UI5ComboBoxChainSelection {
@@ -471,6 +669,14 @@ export class UI5ObjectAttributeSelection extends UI5BaseBuilder<UI5ObjectAttribu
     }
 }
 
-export function ui5(oChain?: UI5ChainSelection | string) {
+export function ui5(oChain?: UI5ChainSelection | string): UI5ChainSelection {
     return new UI5ChainSelection(oChain);
+}
+
+export function ui5Child(): UI5ChildSelection {
+    return new UI5ChildSelection();
+}
+
+export function ui5Parent(): UI5ParentSelection {
+    return new UI5ParentSelection();
 }

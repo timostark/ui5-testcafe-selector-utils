@@ -1,5 +1,6 @@
 import { ui5 } from ".";
 import { ui5Action } from "./ui5Action";
+import { ui5Config } from "./ui5Config";
 import { ui5Waiter } from "./ui5Waiter";
 
 export interface ui5LaunchpadStartupParams {
@@ -19,6 +20,10 @@ class ui5LaunchpadDef {
         //if wanted, wait for further actions..
         if (params.afterLogin) {
             await params.afterLogin();
+        }
+
+        if (ui5Config.launchpad.deactivateAnimation === true) {
+            await ui5Action.deactivateAnimation();
         }
 
         if (params.tile) {

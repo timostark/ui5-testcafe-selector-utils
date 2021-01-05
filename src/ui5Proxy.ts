@@ -1,4 +1,3 @@
-import { debug } from "console";
 import { ClientFunction } from "testcafe";
 import { ui5CoverageConfiguration } from "./ui5Config";
 
@@ -63,7 +62,7 @@ class ui5ProxyDef {
             var aCompList = [];
             for (var sComp in aComp) {
                 var sCompName = aComp[sComp].getMetadata().getComponentName();
-                if (sCompName.startsWith("sap.")) {
+                if (sCompName.startsWith("sap.") && !sCompName.startsWith("sap.ui.demo")) {
                     continue;
                 }
                 aCompList.push(sCompName.replace(/\./g, '/'));
@@ -162,6 +161,12 @@ class ui5ProxyDef {
                     if (proxyRes.req.path.indexOf("/sap/public/bc/ui2") !== -1) {
                         return proxyResData; //logon data..
                     }
+                    if (proxyRes.req.path.indexOf("sap-ui-core.js") !== -1) {
+                        if (that._config?.log === true) {
+                            console.log("skipped " + proxyRes.req.path + " as it is a a SAPUI5 file");
+                        }
+                        return proxyResData;
+                    }
                     if (proxyRes.req.path.indexOf("library-preload.js") !== -1) {
                         if (that._config?.log === true) {
                             console.log("skipped " + proxyRes.req.path + " as it is a library-preload file - add to debug sources if this file should be instrumented");
@@ -196,7 +201,7 @@ class ui5ProxyDef {
                                 break;
                             }
                         }
-                        if (bFound === false) {
+                        if (bFound === false && that._config.includePaths.length > 0) {
                             if (that?._config?.log === true) {
                                 console.log("skipped " + proxyRes.req.path + " as it is not part of include paths");
                             }
@@ -211,7 +216,7 @@ class ui5ProxyDef {
                                 break;
                             }
                         }
-                        if (bFound === true) {
+                        if (bFound === true && that._config.excludePaths.length > 0) {
                             if (that?._config?.log === true) {
                                 console.log("skipped " + proxyRes.req.path + " as it is part of exclude paths");
                             }
