@@ -6,6 +6,7 @@ export interface ui5CoverageConfiguration {
     proxy?: boolean,
     enabled?: boolean,
     log?: boolean,
+    timeoutIncreaseFactor?: number,
     basePath?: string,
     debugComponents?: string[],
     includePaths?: string[],
@@ -49,7 +50,8 @@ class ui5ConfigDef {
                     proxy: false,
                     debugComponents: [],
                     includePaths: [],
-                    excludePaths: []
+                    excludePaths: [],
+                    timeoutIncreaseFactor: 3
                 },
                 launchpad: {
                     deactivateAnimation: false
@@ -89,11 +91,19 @@ class ui5ConfigDef {
         this._config.tileOpeningTimeout = this._config.tileOpeningTimeout ? this._config.tileOpeningTimeout : 40000;
         this._config.firstSelectorTimeout = this._config.firstSelectorTimeout ? this._config.firstSelectorTimeout : 40000;
         this._config.coverage.enabled = process.env.UI5_COVERAGE_ENABLED ? process.env.UI5_COVERAGE_ENABLED === "true" : this._config.coverage.enabled;
+        this._config.coverage.timeoutIncreaseFactor = this._config.coverage.timeoutIncreaseFactor ? this._config.coverage.timeoutIncreaseFactor : 3;
+        if (this._config.coverage.enabled === false) {
+            this._config.coverage.timeoutIncreaseFactor = 1;
+        }
         this._config.traceSelectorOnFailure = typeof this._config.traceSelectorOnFailure === "undefined" ? false : this._config.traceSelectorOnFailure;
     }
 
     get traceSelectorOnFailure(): boolean {
         return this._config.traceSelectorOnFailure;
+    }
+
+    get timeoutIncreaseFactor(): number {
+        return <any>this._config.coverage.timeoutIncreaseFactor;
     }
 
     get firstSelectorTimeout(): number {

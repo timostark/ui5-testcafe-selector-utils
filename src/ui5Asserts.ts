@@ -1,7 +1,7 @@
 import { ui5ActionDef, ui5Steps, ui5StepType, ui5StepStatus } from "./ui5Action";
 import { UI5AnyValueBuilder, UI5StepBaseLib, UI5BaseBuilderIntf } from "./ui5Builder";
 import { t } from "testcafe";
-import { UI5ChainSelection, UI5DataResult } from ".";
+import { UI5BaseBuilder, UI5ChainSelection, UI5DataResult } from ".";
 
 const rqTrack = require("testcafe/lib/api/test-run-tracker");
 
@@ -14,7 +14,7 @@ class ui5AssertOperator {
 
     constructor(selector: UI5StepBaseLib, t: TestController) {
         this._selector = selector;
-        this._testCafeSelector = selector instanceof UI5ChainSelection ? selector.build() : selector;
+        this._testCafeSelector = selector instanceof UI5BaseBuilder ? selector.build() : selector;
         this._lclTestRun = t;
     }
 
@@ -35,7 +35,7 @@ class ui5AssertOperator {
     }
 
     private async _waitForSelector() {
-        if (this._selector instanceof UI5ChainSelection) {
+        if (this._selector instanceof UI5BaseBuilder) {
             await this._selector.build();
         }
     }
@@ -169,7 +169,7 @@ class ui5AssertDef {
     public exists(expectInteractable: boolean = true): ui5AssertOperatorExists {
         let selector = this._selector;
         if (expectInteractable === true) {
-            selector = selector instanceof UI5ChainSelection ? selector.interactable() : selector;
+            selector = selector instanceof UI5BaseBuilder ? selector.interactable() : selector;
         }
 
         let oOperator = new ui5AssertOperatorExists(this._selector, this.t);
@@ -179,7 +179,7 @@ class ui5AssertDef {
     public visible(expectInteractable: boolean = true): ui5AssertOperatorVisible {
         let selector = this._selector;
         if (expectInteractable === true) {
-            selector = selector instanceof UI5ChainSelection ? selector.interactable() : selector;
+            selector = selector instanceof UI5BaseBuilder ? selector.interactable() : selector;
         }
 
         let oOperator = new ui5AssertOperatorVisible(this._selector, this.t);
@@ -189,7 +189,7 @@ class ui5AssertDef {
     public count(expectInteractable: boolean = true): ui5AssertOperatorCount {
         let selector = this._selector;
         if (expectInteractable === true) {
-            selector = selector instanceof UI5ChainSelection ? selector.interactable() : selector;
+            selector = selector instanceof UI5BaseBuilder ? selector.interactable() : selector;
         }
 
         let oOperator = new ui5AssertOperatorCount(this._selector, this.t);
@@ -248,7 +248,7 @@ class ui5AssertDef {
     }
 
     public constructor(selector: UI5StepBaseLib | any, t?: TestController) {
-        if (selector instanceof UI5ChainSelection) {
+        if (selector instanceof UI5BaseBuilder) {
             this._selector = selector;
         } else {
             this._selector = new UI5AnyValueBuilder(selector);

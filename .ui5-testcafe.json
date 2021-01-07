@@ -8,7 +8,7 @@
         "traceSelectorOnFailure": {
             "description": "In case of any failed test step the selector (which was present last) will be traced",
             "type": "boolean",
-            "default": "false"
+            "default": false
         },
         "firstSelectorTimeout": {
             "description": "The first UI5 selector timeout can be overwritten. This can be used to increase the timeout for the loading of the app.",
@@ -27,7 +27,7 @@
                 "deactivateAnimation": {
                     "description": "Deactivates UI5 animation after login",
                     "type": "boolean",
-                    "default": "false"
+                    "default": false
                 }
             }
         },
@@ -38,17 +38,27 @@
                 "enabled": {
                     "description": "Enables Coverage Information",
                     "type": "boolean",
-                    "default": "false"
+                    "default": false
+                },
+                "outDir": {
+                    "description": "Directory to generate the coverage report to",
+                    "type": "string",
+                    "default": "./report/coverage"
+                },
+                "timeoutIncreaseFactor": {
+                    "description": "Factor to increase all timeouts in case coverage is enabled. This is required, as instrumentation and especially debug sources takes some time",
+                    "type": "number",
+                    "default": 3
                 },
                 "log": {
                     "description": "Logs information about code instrumentation",
                     "type": "boolean",
-                    "default": "false"
+                    "default": false
                 },
                 "proxy": {
                     "description": "Creates a proxy server, which instruments code on the fly. Do only use if you want to use code coverage during e2e tests",
                     "type": "boolean",
-                    "default": "false"
+                    "default": false
                 },
                 "basePath": {
                     "description": "Base path of files to be instrumented",

@@ -28,6 +28,7 @@ class ui5ProxyDef {
     private _config?: ui5CoverageConfiguration;
     private _reportedLists: any;
     private _fileCache: any;
+    private _paused: boolean;
 
     constructor() {
         this._coverageUrl = "";
@@ -35,6 +36,7 @@ class ui5ProxyDef {
         this._bCoverageStarted = false;
         this._reportedLists = {};
         this._fileCache = {};
+        this._paused = false;
         this._instrumenter = im ? im.createInstrumenter() : null;
     }
 
@@ -43,6 +45,10 @@ class ui5ProxyDef {
             return url;
         }
         return null;
+    }
+
+    public pauseCoverageProxy() {
+        this._paused = true;
     }
 
     public stopCoverageProxy() {
@@ -107,6 +113,7 @@ class ui5ProxyDef {
     public startCoverageProxy(url: string, config: ui5CoverageConfiguration): string {
         let urlParse = new Url(url);
         let urlHost = urlParse.protocol + "//" + urlParse.host;
+        this._paused = false;
         this._config = config;
 
         if (this._coverageUrl !== "" && this._coverageUrl !== urlHost) {
@@ -158,6 +165,9 @@ class ui5ProxyDef {
                     return req.url;
                 },
                 userResDecorator: function (proxyRes: any, proxyResData: any, userReq: any, userRes: any) {
+                    if (that._paused === true) {
+                        return proxyResData;
+                    }
                     if (proxyRes.statusCode > 300) {
                         return proxyResData;
                     }

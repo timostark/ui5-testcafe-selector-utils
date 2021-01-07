@@ -83,6 +83,9 @@ interface UI5BindingContextDefMetadata {
     [binding: string]: string
 }
 
+interface UI5BindingContextData {
+    [context: string]: any
+}
 
 interface UI5SelectorDefInteractable {
     busy?: boolean,
@@ -104,14 +107,10 @@ interface UI5SelectorDefMetadata {
     interactable?: UI5SelectorDefInteractable
 }
 
-interface UI5SelectorDefFunctions {
-    checkItem?: string;
-    enhancedData?: string;
-}
-
 interface UI5SelectorChildrenDef {
     id: string,
-    className: string
+    className: string,
+    property?: UI5PropertyDefMetadata
 }
 
 interface UI5TableSettings {
@@ -119,6 +118,23 @@ interface UI5TableSettings {
     tableRow?: number;
     tableCol?: number;
 }
+
+interface UI5AggregationRowInfoData {
+    ui5Id: string,
+    ui5AbsoluteId: string
+}
+
+interface UI5AggregationInfoData {
+    rows: UI5AggregationRowInfoData[],
+    filled: boolean,
+    name: string,
+    length: number
+}
+
+interface UI5LabelInfoData {
+    property: UI5PropertyDefMetadata;
+    textBinding: string;
+};
 
 interface UI5DataResultBase {
     /**
@@ -137,23 +153,14 @@ interface UI5DataResultBase {
      * 
      * Example: { items: { length: 3 }}
      */
-    aggregation?: any,
-
-    /**
-     * Contains information about related associations - structure:
-     * ASSOCIATION_NAME { context: { same structure as binding contexts } }
-     * 
-     * Example: { selectedItem: { context: { undefined: { selectedKey: '02' } }
-     */
-    association?: any,
-
+    aggregation?: UI5AggregationInfoData,
     /**
      * Contains information about related binding contexts - structure:
      * MODEL_NAME { DYNAMIC_VALUES_OF_THE_BINDING }
      * 
      * Example: { undefined: { purchaseOrderId: '12345' }}
      */
-    context?: any,
+    context?: UI5BindingContextData,
 
     /**
      * Identical to "context", but not using any model-name, for better upgradeability
@@ -192,27 +199,11 @@ export interface UI5DataResult extends UI5DataResultBase {
      */
     tableData?: UI5TableData,
 
-    /**
-     * Bound in case the selected control is a list item - contains a references to the item
-     */
-    itemdata?: UI5DataResultBase,
+    parents?: UI5DataResultBase[],
 
-    /**
-     * Information about the direct parent
-     */
-    parent?: UI5DataResultBase,
-    /**
-     * Information about the parent of the parent (Level 2)
-     */
-    parentL2?: UI5DataResultBase,
-    /**
-     * Information about the 3 elements above the current item (Level 3)
-     */
-    parentL3?: UI5DataResultBase,
-    /**
-     * Information about the 4 elements above the current item (Level 4)
-     */
-    parentL4?: UI5DataResultBase,
+    itemdata?: UI5PropertyDefMetadata;
+
+    label?: UI5LabelInfoData;
 
     /**
      * Information about the Children
@@ -234,6 +225,7 @@ export interface UI5DataResult extends UI5DataResultBase {
      */
     enhancedData?: any;
 }
+
 
 export interface UI5SelectorDef extends Selector {
     getUI5(fn?: UI5DataCallback, fnCustomData?: string): Promise<UI5DataResult>;

@@ -9,11 +9,17 @@ try {
     require('dotenv').config();
 } catch (err) { }
 
-export function ui5Fixture(name: string, url: string, category?: string): FixtureFn {
+export interface ui5FixtureProperties {
+    disableCoverage: boolean
+};
+
+export function ui5Fixture(name: string, url: string, category?: string, additionalProperties?: ui5FixtureProperties): FixtureFn {
     var urlUse = url;
 
     if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
-        urlUse = ui5Proxy.startCoverageProxy(url, ui5Config.coverage);
+        if (!(additionalProperties?.disableCoverage === true)) {
+            urlUse = ui5Proxy.startCoverageProxy(url, ui5Config.coverage);
+        }
     }
     return fixture(name)
         .meta('PRODUCT', category ? category : "")

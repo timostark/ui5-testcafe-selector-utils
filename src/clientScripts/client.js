@@ -63,6 +63,11 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
                 debugger;
             }
         }
+
+        if (this._oCurrentItemInRecordMode && this._oCurrentItemInRecordMode.getId() === oItem.getId()) {
+            debugger;
+        }
+
         bFound = true;
 
         this._ui5CurrentSelectorItem = oItem.getId();
@@ -71,50 +76,6 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
         bFound = this._checkItem(oItem, id);
         if (bFound === false) {
             continue;
-        }
-        if (id.label) {
-            this._ui5CurrentSelectorTarget = "label";
-            bFound = bFound && this._checkItem(this._getLabelForItem(oItem), id.label);
-            if (bFound === false) {
-                continue;
-            }
-        }
-
-        //check parent levels..
-        if (id.parent) {
-            this._ui5CurrentSelectorTarget = "parent-1";
-            bFound = bFound && this._checkItem(this._getParentWithDom(oItem, 1), id.parent);
-            if (bFound === false) {
-                continue;
-            }
-        }
-        if (id.parentL2) {
-            this._ui5CurrentSelectorTarget = "parent-2";
-            bFound = bFound && this._checkItem(this._getParentWithDom(oItem, 2), id.parentL2);
-            if (bFound === false) {
-                continue;
-            }
-        }
-        if (id.parentL3) {
-            this._ui5CurrentSelectorTarget = "parent-3";
-            bFound = bFound && this._checkItem(this._getParentWithDom(oItem, 3), id.parentL3);
-            if (bFound === false) {
-                continue;
-            }
-        }
-        if (id.parentL4) {
-            this._ui5CurrentSelectorTarget = "parent-4";
-            bFound = bFound && this._checkItem(this._getParentWithDom(oItem, 4), id.parentL4);
-            if (bFound === false) {
-                continue;
-            }
-        }
-        if (id.itemdata) {
-            this._ui5CurrentSelectorTarget = "itemdata";
-            bFound = bFound && this._checkItem(this._getItemForItem(oItem), id.itemdata);
-            if (bFound === false) {
-                continue;
-            }
         }
 
         if (bFound === false) {
@@ -560,12 +521,99 @@ ui5TestCafeSelectorDef.prototype._logCorrectValue = function (sIdent, sValueExpe
     });
 };
 
+ui5TestCafeSelectorDef.prototype._getSmartContextModelName = function (oItem) {
+    var oCurParent = oItem;
+    var sModelName = "";
+    var bAnyBinding = false;
+
+    //"smart": maybe enable to search for more specific bindings based on the control - i.e. for texts, search for texts..
+    while (oCurParent) {
+        var sControlParent = oCurParent.getMetadata()._sClassName;
+        if (sControlParent === "sap.m.Table" || sControlParent === "sap.m.PlanningCalendar" || sControlParent === "sap.m.Tree" || sControlParent === "sap.m.List" || sControlParent === "sap.ui.table.Table" || sControlParent === "sap.ui.table.TreeTable" || sControlParent === "sap.zen.crosstab.Crosstab") {
+            if (oCurParent.mBindingInfos["items"] || oCurParent.mBindingInfos["rows"]) {
+                var sBinding = oCurParent.mBindingInfos["items"] ? "items" : "rows";
+                var oBndg = oCurParent.mBindingInfos[sBinding];
+                if (oBndg.parts) {
+                    for (let i = 0; i < oBndg.parts.length; i++) {
+                        sModelName = oItem.mBindingInfos[sBinding].parts[i].model ? oItem.mBindingInfos[sBinding].parts[i].model : "undefined";
+                        break;
+                    }
+                } else {
+                    sModelName = oBndg.model ? oBndg.model : "undefined";
+                }
+            }
+            break;
+        }
+        oCurParent = oCurParent.getParent();
+    }
+    if (sModelName.length === 0) {
+        for (let sBinding in oItem.mBindingInfos) {
+            if (!oItem.mBindingInfos[sBinding].parts) {
+                continue;
+            }
+            for (let i = 0; i < oItem.mBindingInfos[sBinding].parts.length; i++) {
+                sModelName = oItem.mBindingInfos[sBinding].parts[i].model ? oItem.mBindingInfos[sBinding].parts[i].model : "undefined";
+            }
+            bAnyBinding = true;
+        }
+        if (!bAnyBinding) {
+            //search up the binding context hierarchy (first=direct element bindings, than bindings coming directly from parent, than via propagated views/elements)
+            let bndgCtx = {};
+            if (!$.isEmptyObject(oItem.mElementBindingContexts)) {
+                bndgCtx = oItem.mElementBindingContexts;
+            } else if (!$.isEmptyObject(oItem.oBindingContexts)) {
+                bndgCtx = oItem.oBindingContexts;
+            } else if (!$.isEmptyObject(oItem.oPropagatedProperties.oBindingContexts)) {
+                bndgCtx = oItem.oPropagatedProperties.oBindingContexts;
+            } else {
+                return false;
+            }
+            for (let sModelNameLoc in bndgCtx) {
+                sModelName = sModelNameLoc ? sModelNameLoc : "undefined";
+                break;
+            }
+        }
+    }
+    return sModelName;
+};
+
+
+ui5TestCafeSelectorDef.prototype._getPropertyValueForItem = function (oItem, sProperty) {
+    try {
+        if (!oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)]) {
+            return undefined;
+        }
+        return oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)]();
+    } catch (err) {
+        return "error while selecting";
+    }
+};
+
+ui5TestCafeSelectorDef.prototype._convertPropertyValueForItem = function (oItem, sProperty, sPropertyValueSearch) {
+    try {
+        var sPropertyType = oItem.getMetadata().getProperty(sProperty).getType().getName();
+        if (sPropertyType == "boolean") {
+            sPropertyValueSearch = (typeof sPropertyValueSearch === "boolean") ? sPropertyValueSearch : sPropertyValueSearch === "true";
+        } else if (sPropertyType == "int") {
+            sPropertyValueSearch = parseInt(sPropertyValueSearch, 10);
+        } else if (sPropertyType == "float") {
+            sPropertyValueSearch = parseFloat(sPropertyValueSearch);
+        } else if (sPropertyType == "string") {
+            sPropertyValueSearch = sPropertyValueSearch.toString();
+        }
+    } catch (e) {
+        sPropertyValueSearch = sPropertyValueSearch;
+    }
+    return sPropertyValueSearch;
+};
+
 ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
     let bFound = true;
     if (!oItem) { //e.g. parent level is not existing at all..
         return false;
     }
-    if (!oItem.getDomRef()) {
+
+    if (!oItem.getDomRef || !oItem.getDomRef()) {
         this._logWrongValue("domRef", "exists", "does not exist");
         return false;
     }
@@ -798,42 +846,6 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
             return false;
         }
         this._logCorrectValue("id.childrenCount", id.childrenCount.count, aChildrenCount[sClassName]);
-    }
-
-    if (id.hasChildWith) {
-        var aChildren = this._getChildren(oItem);
-        if (id.hasChildWithId.id) {
-            if (!aChildren.find(function (e) {
-                return e.id.indexOf(id.hasChildWith.id) !== -1;
-            })) {
-                this._logWrongValue("id.hasChildWith.id", id.hasChildWith.id, "-");
-                return false;
-            }
-            this._logCorrectValue("id.hasChildWith.id", id.hasChildWith.id, id.hasChildWith.id);
-        }
-        if (id.hasChildWithId.className) {
-            if (!aChildren.find(function (e) {
-                return e.className.indexOf(id.hasChildWith.className) !== -1;
-            })) {
-                this._logWrongValue("id.hasChildWith.className", id.hasChildWith.className, "-");
-                return false;
-            }
-            this._logCorrectValue("id.hasChildWith.className", id.hasChildWith.className, id.hasChildWith.className);
-        }
-    }
-
-    if (id.parentAnyLevel) {
-        let oParent = oItem.getParent();
-        this._ui5CurrentSelectorTarget = "parentAnyLevel";
-
-        //extremly simplistic here..
-        while (oParent) {
-            if (!this._checkItem(oParent, id.parentAnyLevel)) {
-                return false;
-            }
-            oParent = oParent.getParent();
-        }
-        this._ui5CurrentSelectorTarget = "";
     }
 
     if (typeof id.tableSettings !== "undefined") {
@@ -1128,58 +1140,7 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
     }
 
     if (id.smartContext) {
-        var bAnyBinding = false;
-        var oCurParent = oItem;
-        var sModelName = "";
-
-        //"smart": maybe enable to search for more specific bindings based on the control - i.e. for texts, search for texts..
-        while (oCurParent) {
-            var sControlParent = oCurParent.getMetadata()._sClassName;
-            if (sControlParent === "sap.m.Table" || sControlParent === "sap.m.PlanningCalendar" || sControlParent === "sap.m.Tree" || sControlParent === "sap.m.List" || sControlParent === "sap.ui.table.Table" || sControlParent === "sap.ui.table.TreeTable" || sControlParent === "sap.zen.crosstab.Crosstab") {
-                if (oCurParent.mBindingInfos["items"] || oCurParent.mBindingInfos["rows"]) {
-                    var sBinding = oCurParent.mBindingInfos["items"] ? "items" : "rows";
-                    var oBndg = oCurParent.mBindingInfos[sBinding];
-                    if (oBndg.parts) {
-                        for (let i = 0; i < oBndg.parts.length; i++) {
-                            sModelName = oItem.mBindingInfos[sBinding].parts[i].model ? oItem.mBindingInfos[sBinding].parts[i].model : "undefined";
-                            break;
-                        }
-                    } else {
-                        sModelName = oBndg.model ? oBndg.model : "undefined";
-                    }
-                }
-                break;
-            }
-            oCurParent = oCurParent.getParent();
-        }
-        if (sModelName.length === 0) {
-            for (let sBinding in oItem.mBindingInfos) {
-                if (!oItem.mBindingInfos[sBinding].parts) {
-                    continue;
-                }
-                for (let i = 0; i < oItem.mBindingInfos[sBinding].parts.length; i++) {
-                    sModelName = oItem.mBindingInfos[sBinding].parts[i].model ? oItem.mBindingInfos[sBinding].parts[i].model : "undefined";
-                }
-                bAnyBinding = true;
-            }
-            if (!bAnyBinding) {
-                //search up the binding context hierarchy (first=direct element bindings, than bindings coming directly from parent, than via propagated views/elements)
-                let bndgCtx = {};
-                if (!$.isEmptyObject(oItem.mElementBindingContexts)) {
-                    bndgCtx = oItem.mElementBindingContexts;
-                } else if (!$.isEmptyObject(oItem.oBindingContexts)) {
-                    bndgCtx = oItem.oBindingContexts;
-                } else if (!$.isEmptyObject(oItem.oPropagatedProperties.oBindingContexts)) {
-                    bndgCtx = oItem.oPropagatedProperties.oBindingContexts;
-                } else {
-                    return false;
-                }
-                for (let sModelNameLoc in bndgCtx) {
-                    sModelName = sModelNameLoc ? sModelNameLoc : "undefined";
-                    break;
-                }
-            }
-        }
+        var sModelName = this._getSmartContextModelName(oItem);
         let oCtx = oItem.getBindingContext(sModelName === "undefined" ? undefined : sModelName);
         if (!oCtx) {
             this._logWrongValue("smartContext." + sModelName, "available", "not available");
@@ -1225,38 +1186,66 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
 
     if (id.property) {
         for (let sProperty in id.property) {
-            if (!oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)]) {
-                //property is not even available in that item.. just skip it..
-                bFound = false;
-                break;
-            }
-
-            let sPropertyValueItem = oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)]();
-            let sPropertyValueSearch = id.property[sProperty];
-            try {
-                var sPropertyType = oItem.getProperty(sProperty).getType().getName();
-                if (sPropertyType == "boolean") {
-                    sPropertyValueSearch = (typeof sPropertyValueSearch === "boolean") ? sPropertyValueSearch : sPropertyValueSearch === "true";
-                } else if (sPropertyType == "int") {
-                    sPropertyValueSearch = parseInt(sPropertyValueSearch, 10);
-                } else if (sPropertyType == "float") {
-                    sPropertyValueSearch = parseFloat(sPropertyValueSearch);
-                } else if (sPropertyType == "string") {
-                    sPropertyValueSearch = sPropertyValueSearch.toString();
-                }
-            } catch (e) {
-                sPropertyValueSearch = sPropertyValueSearch;
-            }
+            let sPropertyValueItem = this._getPropertyValueForItem(oItem, sProperty);
+            let sPropertyValueSearch = this._convertPropertyValueForItem(oItem, sProperty, id.property[sProperty]);
 
             if (sPropertyValueItem !== sPropertyValueSearch) {
                 this._logWrongValue("property." + sProperty, sPropertyValueItem, sPropertyValueSearch);
-                bFound = false;
-                break;
+                return false;
             }
             this._logCorrectValue("property." + sProperty, sPropertyValueItem, sPropertyValueSearch);
         }
-        if (bFound === false) {
+    }
+
+    if (id.label) {
+        var oLabel = this._getLabelForItem(oItem);
+        if (!oLabel) {
+            this._logWrongValue("label", "exists", "-");
             return false;
+        }
+        this._logCorrectValue("label", "exists", "exists");
+
+        if (id.label.property) {
+            for (let sProperty in id.label.property) {
+                let sPropertyValueItem = this._getPropertyValueForItem(oLabel, sProperty);
+                let sPropertyValueSearch = this._convertPropertyValueForItem(oLabel, sProperty, id.label.property[sProperty]);
+
+                if (sPropertyValueItem !== sPropertyValueSearch) {
+                    this._logWrongValue("label.property." + sProperty, sPropertyValueItem, sPropertyValueSearch);
+                    return false;
+                }
+                this._logCorrectValue("label.property." + sProperty, sPropertyValueItem, sPropertyValueSearch);
+            }
+        }
+
+        if (id.label.textBinding) {
+            let oBndgInfo = this._getBindingInformation(oItem, "text");
+            let aCheckArray = oBndgInfo.path ? [oBndgInfo.path, oBndgInfo.pathFull, oBndgInfo.pathRelative] : [];
+            if (!oBndgTextBinding || aCheckArray.indexOf(id.label.textBinding) === -1) {
+                this._logWrongValue("label.textBinding", id.label.textBinding, oBndgTextBinding.path ? oBndgTextBinding.path : "-");
+                return false;
+            }
+            this._logCorrectValue("label.textBinding", id.label.textBinding, id.label.textBinding);
+        }
+    }
+
+    if (id.itemdata) {
+        var oItemForItem = this._getItemForItem(oItem);
+        if (!oItemForItem) {
+            this._logWrongValue("itemdata", "exists", "-");
+            return false;
+        }
+        this._logCorrectValue("itemdata", "exists", "exists");
+
+        for (let sProperty in id.itemdata) {
+            let sPropertyValueItem = this._getPropertyValueForItem(oItemForItem, sProperty);
+            let sPropertyValueSearch = this._convertPropertyValueForItem(oItemForItem, sProperty, id.itemdata[sProperty]);
+
+            if (sPropertyValueItem !== sPropertyValueSearch) {
+                this._logWrongValue("itemdata." + sProperty, sPropertyValueItem, sPropertyValueSearch);
+                return false;
+            }
+            this._logCorrectValue("itemdata." + sProperty, sPropertyValueItem, sPropertyValueSearch);
         }
     }
 
@@ -1272,15 +1261,37 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
         }
     }
 
+    if (id.parentAnyLevel) {
+        let oParent = oItem.getParent();
+        this._ui5CurrentSelectorTarget = "parentAnyLevel";
+
+        //extremly simplistic here..
+        while (oParent) {
+            if (this._checkItem(oParent, id.parentAnyLevel)) {
+                break;
+            }
+            oParent = this._getParentWithDom(oParent, 1, false);
+            if (!oParent) {
+                return false;
+            }
+        }
+        this._ui5CurrentSelectorTarget = "";
+    }
+
     if (id.atLeastOneChild) {
         let aChildren = this._getChildren(oItem);
         this._ui5CurrentSelectorTarget = "atLeastOneChild";
 
+        let bFound = false;
         for (var i = 0; i < aChildren.length; i++) {
             var oElem = _wnd.sap.ui.getCore().byId(aChildren[i].id);
             if (oElem && this._checkItem(oElem, id.atLeastOneChild)) {
-                return false;
+                bFound = true;
+                break;
             }
+        }
+        if (!bFound) {
+            return false;
         }
         this._ui5CurrentSelectorTarget = "";
     }
@@ -1345,6 +1356,14 @@ ui5TestCafeSelectorDef.prototype._isInTransition = function () {
 
 ui5TestCafeSelectorDef.prototype.find = function (id) {
     let aItem = null;
+
+    if (id && id.actionDescription) {
+        var oNodeElem = this._getHammerheadShadowUiByClass("status-hammerhead-shadow-ui");
+        if (oNodeElem) {
+            oNodeElem.innerText = id.actionDescription;
+        }
+    }
+
     if (typeof _wnd.sap === "undefined" || typeof _wnd.sap.ui === "undefined" || typeof _wnd.sap.ui.getCore === "undefined" || !_wnd.sap.ui.getCore() || !_wnd.sap.ui.getCore().isInitialized()) {
         return [];
     }
@@ -1357,7 +1376,6 @@ ui5TestCafeSelectorDef.prototype.find = function (id) {
     if (this._isInTransition() === true) {
         return [];
     }
-
 
     if (typeof id === "string") {
         if (id.charAt(0) === '#') {
@@ -1583,7 +1601,6 @@ ui5TestCafeSelectorDef.prototype._getEmptyReturn = function (bWithParent) {
     var oRet = {
         property: {},
         aggregation: [],
-        association: {},
         binding: {},
         bindingContext: {},
         context: {},
@@ -1615,18 +1632,38 @@ ui5TestCafeSelectorDef.prototype._getEmptyReturn = function (bWithParent) {
     }
 
     var oReturn = JSON.parse(JSON.stringify(oRet));
-    oReturn.parent = oReturn;
-    oReturn.parentL2 = oReturn;
-    oReturn.parentL3 = oReturn;
-    oReturn.parentL4 = oReturn;
-    oReturn.itemdata = oReturn;
-
     return oReturn;
 }
 
-ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomNode, bFull, bCurElement) {
+ui5TestCafeSelectorDef.prototype._getParents = function (oItem) {
+    var aParents = [];
+    let oParent = this._getParentWithDom(oItem, 1, false);
+    while (oParent) {
+        aParents.push(this._getElementInformation(oParent, oParent.getDomRef(), false));
+        oParent = this._getParentWithDom(oParent, 1, false);
+    }
+    return aParents;
+}
+
+ui5TestCafeSelectorDef.prototype._getElementProperties = function (oItem) {
+    var oReturn = {};
+    for (let sProperty in oItem.mProperties) {
+        if (typeof oItem.mProperties[sProperty] === "function" || typeof oItem.mProperties[sProperty] === "object") {
+            continue;
+        }
+        let fnGetter = oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)];
+        if (fnGetter) {
+            oReturn[sProperty] = fnGetter.call(oItem);
+        } else {
+            oReturn[sProperty] = oItem.mProperties[sProperty];
+        }
+    }
+
+    return oReturn;
+};
+
+ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomNode, bCurElement) {
     let oReturn = this._getEmptyReturn(false);
-    bFull = typeof bFull === "undefined" ? true : bFull;
 
     if (!oItem) {
         return oReturn;
@@ -1679,6 +1716,8 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     if (oItem.zenPureId) {
         oReturn.identifier.lumiraId = oItem.zenPureId;
     }
+
+    oReturn.identifier.id = oItem.zenPureId ? oItem.zenPureId : oReturn.identifier.ui5Id;
 
     //get metadata..
     oReturn.metadata = {
@@ -1742,10 +1781,6 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
         }
     }
 
-    if (bFull === false) {
-        return oReturn;
-    }
-
     //view..
     let oView = this._getParentWithDom(oItem, 1, true);
     if (oView) {
@@ -1787,18 +1822,9 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
         oReturn.bindingContext[sModel] = oBndg;
     }
 
+
     //return all simple properties
-    for (let sProperty in oItem.mProperties) {
-        if (typeof oItem.mProperties[sProperty] === "function" || typeof oItem.mProperties[sProperty] === "object") {
-            continue;
-        }
-        let fnGetter = oItem["get" + sProperty.charAt(0).toUpperCase() + sProperty.substr(1)];
-        if (fnGetter) {
-            oReturn.property[sProperty] = fnGetter.call(oItem);
-        } else {
-            oReturn.property[sProperty] = oItem.mProperties[sProperty];
-        }
-    }
+    oReturn.property = this._getElementProperties(oItem);
 
     if (oItem.getMetadata()._sClassName === "sap.zen.crosstab.Crosstab") {
         oReturn.lumiraProperty["numberOfDimensionsOnRow"] = oItem.oHeaderInfo ? oItem.oHeaderInfo.getNumberOfDimensionsOnRowsAxis() : 0;
@@ -1837,10 +1863,37 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     oReturn.customData = this._getCustomData(oItem);
     oReturn.positionInParent = this._getPositionInParent(oItem);
 
+    var sModelName = this._getSmartContextModelName(oItem);
+    if (oReturn.context[sModelName]) {
+        oReturn.smartContext = oReturn.context[sModelName];
+    }
+
+    if (bCurElement) {
+        oReturn.parents = this._getParents(oItem);
+    }
+
     if (bCurElement) {
         oReturn.children = this._getChildren(oItem);
         oReturn.childrenCount = this._getChildrenCount(oReturn.children);
         oReturn.tableData = this._getTableData(oItem);
+
+        oReturn.label = {
+            textBinding: null,
+            property: {}
+        };
+        oReturn.itemdata = {};
+
+        var oLabel = this._getLabelForItem(oItem);
+        if (oLabel) {
+            oReturn.label.property = this._getElementProperties(oLabel);
+            var oBndg = this._getBindingInformation(oLabel, "text");
+            oReturn.label.textBinding = oBndg ? oBndg.path : null;
+        }
+        var oItemForItem = this._getItemForItem(oItem);
+        if (oItemForItem) {
+            oReturn.itemdata = this._getElementProperties(oItemForItem);
+        }
+
 
         let aParentIds = [];
         aParentIds.push(oItem.getId());
@@ -1916,16 +1969,11 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
         //for every single line, get the binding context, and the row id, which can later on be analyzed again..
         for (let i = 0; i < aAggregation.length; i++) {
             oAggregationInfo.rows.push({
-                context: this._getContexts(aAggregation[i]),
                 ui5Id: this._getUi5Id(aAggregation[i]),
                 ui5AbsoluteId: aAggregation[i].getId()
             });
-
-            //performance and navigation: in case we have more than 50 aggregation we just don't need them in any realistic scenario..
-            if (i > 50) {
-                break;
-            }
         }
+
         oReturn.aggregation[oAggregationInfo.name] = oAggregationInfo;
     }
 
@@ -1993,7 +2041,8 @@ ui5TestCafeSelectorDef.prototype._getChildrenRec = function (oItemOrig, aChildre
         })) {
             aReturn.push({
                 id: oCtrl[0].getId(),
-                className: oCtrl[0].getMetadata()._sClassName
+                className: oCtrl[0].getMetadata()._sClassName,
+                property: this._getElementProperties(oCtrl[0])
             });
         }
     }
@@ -2083,15 +2132,7 @@ ui5TestCafeSelectorDef.prototype.getElementInformation = function (oItem, oDomNo
     }
 
     //local methods on purpose (even if duplicated) (see above)
-    oReturn = this._getElementInformation(oItem, oDomNode, true, true);
-
-    //get all parents, and attach the same information in the same structure
-    oReturn.parent = this._getElementInformation(this._getParentWithDom(oItem, 1));
-    oReturn.parentL2 = this._getElementInformation(this._getParentWithDom(oItem, 2));
-    oReturn.parentL3 = this._getElementInformation(this._getParentWithDom(oItem, 3));
-    oReturn.parentL4 = this._getElementInformation(this._getParentWithDom(oItem, 4));
-    oReturn.label = this._getElementInformation(this._getLabelForItem(oItem));
-    oReturn.itemdata = this._getElementInformation(this._getItemForItem(oItem));
+    oReturn = this._getElementInformation(oItem, oDomNode, true);
 
     if (typeof fnCustomData !== "undefined") {
         try {
@@ -2114,163 +2155,319 @@ ui5TestCafeSelectorDef.prototype.getDomNodeInformation = function (oDomNode, fnC
 };
 
 
-ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function () {
-    if (this._oTableSelectDialog) {
-        return this._oTableSelectDialog;
+ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function (aOutput) {
+    if (this._oPopover) {
+        this._oPopover.destroy();
+        this._oPopover = null;
     }
 
-    var fnDoSearch = function (oEvent) {
-        var sSearchValue = oEvent.getParameter("value"),
-            itemsBinding = oEvent.getParameter("itemsBinding");
+    var aCols = [
+        new sap.m.Column({ width: "12em", hAlign: "Center", header: new sap.m.Label({ text: "Group" }) }),
+        new sap.m.Column({ width: "16em", hAlign: "Center", header: new sap.m.Label({ text: "Name" }) }),
+        new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Value" }) }),
+        new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Code" }) })];
 
-        // create the local filter to apply
-        if (sSearchValue !== undefined && sSearchValue.length > 0) {
-            //@ts-ignore
-            itemsBinding.filter(new sap.ui.model.Filter({
-                and: false,
-                filters: [
-                    //@ts-ignore
-                    new sap.ui.model.Filter("type", sap.ui.model.FilterOperator.Contains, sSearchValue),
-                    //@ts-ignore
-                    new sap.ui.model.Filter("name", sap.ui.model.FilterOperator.Contains, sSearchValue),
-                    //@ts-ignore
-                    new sap.ui.model.Filter("value", sap.ui.model.FilterOperator.Contains, sSearchValue)
-                ]
-            }))
-        } else {
-            itemsBinding.filter([]);
+
+    var aCells = [new sap.m.Text({ text: "{group}" }), new sap.m.Text({ text: "{name}" }), new sap.m.Text({ text: "{value}" }), new sap.m.Text({ text: "{code}" })];
+    if (this._recordModeIdentifierBase) {
+        aCols.push(new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Debug-Selector Value" }) }));
+        aCells.push(new sap.m.ObjectStatus({ text: "{selectorValue}", state: "{selectorValueStatus}" }))
+    }
+
+    this._oSearchField = new sap.m.SearchField({
+        width: "40%",
+        liveChange: function (e) {
+            this._updateFilterForPopup(e.getParameter("newValue"));
+        }.bind(this),
+        search: function (e) {
+            this._updateFilterForPopup();
+        }.bind(this)
+    })
+    var aButtons = [this._oSearchField, new sap.m.ToolbarSpacer()];
+    this._oToggleButtonForParent = new sap.m.ToggleButton({
+        text: "With Parents",
+        pressed: true,
+        press: function (e) {
+            this._updateFilterForPopup();
+        }.bind(this)
+    });
+    aButtons.push(this._oToggleButtonForParent);
+
+    this._oToggleButtonForSelector = new sap.m.ToggleButton({
+        text: "With Selector Data",
+        pressed: true,
+        press: function (e) {
+            this._updateFilterForPopup();
+        }.bind(this)
+    });
+
+    if (this._recordModeIdentifierBase) {
+        aButtons.push(this._oToggleButtonForSelector);
+    }
+    aButtons.push(new sap.m.Button({
+        text: "Goto Parent",
+        icon: "sap-icon://arrow-top", press: function () {
+            var oItem = this._oCurrentItemInRecordMode;
+            var oParent = this._getParentWithDom(oItem, 1, false);
+            if (!oParent) {
+                return;
+            }
+            this.onClickInRecordMode(oParent.getDomRef());
+        }.bind(this)
+    }));
+
+    var oToolbar = new sap.m.OverflowToolbar({
+        content: aButtons
+    });
+
+    var oTable = new sap.m.Table("tableInfo", { mode: "MultiSelect", columns: aCols, headerToolbar: oToolbar });
+    var oItemTemplate = new sap.m.ColumnListItem({ type: "Active", cells: aCells });
+    if (oTable.setSticky) {
+        oTable.setSticky([sap.m.Sticky.ColumnHeaders, sap.m.Sticky.HeaderToolbar]);
+    }
+    var oScrollContainer = new sap.m.ScrollContainer({
+        width: "100%", horizontal: false, vertical: true, height: "570px", content: [oTable]
+    });
+    var oInput = new sap.m.Input("inpText", { editable: false });
+    var oFoundText = new sap.m.Text("inpResultText", { wrapping: true, maxLines: 3 });
+    this._oPopover = new sap.m.Dialog("detailsDialogPopover", {
+        title: "Details of item",
+        contentWidth: "70%",
+        contentHeight: "80%",
+        beginButton: new sap.m.Button({ text: "Close and Continue Test", press: function () { this._oPopover.close(); this._fnRecordModeSelectResolve(); }.bind(this) }),
+        endButton: new sap.m.Button({ text: "Reselect", press: function () { this._oPopover.close(); }.bind(this) }),
+        content: [oScrollContainer, oInput, oFoundText]
+    });
+    this._oPopover.addStyleClass("sapUiSizeCompact");
+    this._oPopoverModel = new sap.ui.model.json.JSONModel({ items: aOutput, currentCode: "" });
+    this._oPopover.setModel(this._oPopoverModel);
+
+    oInput.bindValue("/currentCode");
+    oFoundText.bindText("/currentFoundItems");
+    oTable.bindAggregation("items", "/items", oItemTemplate);
+
+    this._oPopover.attachAfterClose(function (e) {
+        this._bSelectDialogIsOpen = false;
+    }.bind(this));
+
+    oTable.attachSelectionChange(function () {
+        this._updateCodeAndFoundItems();
+    }.bind(this));
+
+    this._oTable = oTable;
+    this._updateFilterForPopup();
+
+    return this._oPopover;
+};
+
+ui5TestCafeSelectorDef.prototype._updateFilterForPopup = function (sSearchFieldValue) {
+    var aFilter = [];
+    if (!this._oToggleButtonForParent.getPressed()) {
+        aFilter.push(new sap.ui.model.Filter("parent", "NE", true));
+    }
+    if (this._oToggleButtonForSelector.getPressed() && this._recordModeIdentifierBase) {
+        aFilter.push(new sap.ui.model.Filter("selectorAvailable", "EQ", true));
+    }
+    if (sSearchFieldValue || this._oSearchField.getValue().length > 0) {
+        var sVal = sSearchFieldValue ? sSearchFieldValue : this._oSearchField.getValue();
+        aFilter.push(new sap.ui.model.Filter({
+            filters: [new sap.ui.model.Filter("group", "Contains", sVal), new sap.ui.model.Filter("name", "Contains", sVal), new sap.ui.model.Filter("valueAsStr", "Contains", sVal), new sap.ui.model.Filter("code", "Contains", sVal)],
+            and: false
+        }));
+    }
+
+    this._oTable.getBinding("items").filter(aFilter);
+};
+
+ui5TestCafeSelectorDef.prototype._updateCodeAndFoundItems = function () {
+    var aElems = this._oTable.getSelectedContexts();
+    var sCode = "ui5()";
+    var oId = {};
+    for (var i = 0; i < aElems.length; i++) {
+        let oObj = aElems[i].getObject();
+        sCode += "." + oObj.code;
+
+        //generate selector value based on the value
+        var aId = oObj.selector.split(".");
+        var oCur = oId;
+        for (let j = 0; j < aId.length; j++) {
+            if (j === aId.length - 1) {
+                oCur[aId[j]] = oObj.value;
+                continue;
+            }
+            if (!oCur[aId[j]]) {
+                oCur[aId[j]] = {};
+            }
+            oCur = oCur[aId[j]];
         }
-    };
+    }
+    sCode += ";";
+    this._oPopoverModel.setProperty("/currentCode", sCode);
 
-    //@ts-ignore
-    this._oTableSelectDialog = new sap.m.TableSelectDialog("TableSelectDialog1", {
-        title: "Attributes",
-        noDataText: "No Attributes available",
-        search: fnDoSearch,
-        liveChange: fnDoSearch,
-        columns: [
-            //@ts-ignore
-            new sap.m.Column({
-                hAlign: "Center",
-                //@ts-ignore
-                header: new sap.m.Label({
-                    text: "Type"
-                })
-            }),
-            //@ts-ignore
-            new sap.m.Column({
-                hAlign: "Center",
-                //@ts-ignore
-                header: new sap.m.Label({
-                    text: "Name"
-                })
-            }),
-            //@ts-ignore
-            new sap.m.Column({
-                hAlign: "Center",
-                //@ts-ignore
-                header: new sap.m.Label({
-                    text: "Value"
-                })
-            })
-        ]
-    });
+    oId.selectAll = true;
+    var aItems = this.findBy(oId);
+    var aItemsCtrl = [];
+    for (let j = 0; j < aItems.length; j++) {
+        aItemsCtrl.push(this.getControlFromDom(aItems[j]).getId());
+    }
+    var sFoundItems = "Found Items (" + aItems.length + "):" + aItemsCtrl.join(",");
+    this._oPopoverModel.setProperty("/currentFoundItems", sFoundItems);
+};
 
-    // create the template for the items binding
-    //@ts-ignore
-    var oItemTemplate1 = new sap.m.ColumnListItem({
-        type: "Active",
-        unread: false,
-        cells: [
-            //@ts-ignore
-            new sap.m.Text({
-                text: "{type}"
-            }),
-            //@ts-ignore
-            new sap.m.Text({
-                text: "{name}"
-            }),
-            //@ts-ignore
-            new sap.m.Text({
-                text: "{value}"
-            })
-        ]
-    });
+ui5TestCafeSelectorDef.prototype._getValueFromSelector = function (sSel) {
+    if (!this._recordModeIdentifierBase) {
+        return null;
+    }
+    var aSplit = sSel.split(".");
+    var oCurrent = this._recordModeIdentifierBase;
+    for (var i = 0; i < aSplit.length; i++) {
+        if (!oCurrent[aSplit[i]]) {
+            return null;
+        }
+        oCurrent = oCurrent[aSplit[i]];
+    }
+    return oCurrent;
+};
 
-    this._oTableSelectDialog.bindAggregation("items", "/items", oItemTemplate1);
-    return this._oTableSelectDialog;
+ui5TestCafeSelectorDef.prototype._formatValueForCode = function (val) {
+    if (typeof val === "string") {
+        return "'" + val + "'";
+    }
+    if (typeof val !== "undefined" && val.toString) {
+        return val.toString();
+    }
+    return val;
 };
 
 ui5TestCafeSelectorDef.prototype.onClickInRecordMode = function (oDomNode) {
     var oItem = this.getControlFromDom(oDomNode);
     var oData = this.getElementInformation(oItem, oDomNode);
 
+    this._oCurrentItemInRecordMode = oItem;
+
     //match to possible selector attributes of this element..
     bInTable = true;
-    var oOutput = {
-        identifier: oData.identifier,
-        metadata: oData.metadata,
-        property: oData.property,
-        positionInParent: oData.positionInParent,
-        tableSettings: oData.tableSettings,
-        smartContext: oData.smartContext,
-        binding: oData.binding,
-        bindingContext: oData.bindingContext,
-        lumiraProperty: oData.lumiraProperty,
-        childrenCount: oData.childrenCount,
-        sac: oData.sac,
-        customData: oData.customData
-    };
-    if (oOutput.binding) {
-        for (var sNm in oOutput.binding) {
-            oOutput.binding[sNm] = oOutput.binding[sNm].path;
-        }
+
+    //also add the code as last column, on how to get that..
+    //(1) identifier..
+    var aOutput = [];
+
+    aOutput.push({ parent: false, group: "Id", name: "Identifier", value: oData.identifier.ui5Id, code: "id(" + this._formatValueForCode(oData.identifier.ui5Id) + ")", selector: "identifier.id" });
+
+    //loop over parents to add those identifiers..
+    for (let i = 0; i < oData.parents.length; i++) {
+        aOutput.push({ parent: false, group: "Id", name: "Parent Identifier", value: oData.parents[i].identifier.ui5Id, selector: "parentAnyLevel.identifier.id", code: "parentId(" + this._formatValueForCode(oData.parents[i].identifier.ui5Id) + ")" });
     }
 
-    //travese into simple table mode..
-    var aOutput = [];
-    var fnAddToOutput = function (sPattern, oObj) {
-        for (var sObj in oObj) {
-            var sValue = oObj[sObj];
-            if (typeof sValue === "object") {
-                sValue = JSON.stringify(sValue);
-            }
-            if (!sValue) {
-                continue;
-            }
+
+    aOutput.push({ parent: false, group: "Metadata", name: "Class-Name", value: oData.metadata.elementName, code: "element(" + this._formatValueForCode(oData.metadata.elementName) + ")", selector: "metadata.elementName" });
+    aOutput.push({ parent: false, group: "Metadata", name: "Component", value: oData.metadata.componentName, code: "component(" + this._formatValueForCode(oData.metadata.componentName) + ")", selector: "metadata.componentName" });
+    aOutput.push({ parent: false, group: "Metadata", name: "Interactable", value: oData.metadata.interactable.interactable, code: "interactable()", selector: "metadata.interactable.interactable" });
+    aOutput.push({ parent: false, group: "Metadata", name: "Position in Parent", value: oData.positionInParent, code: "positionInParent(" + this._formatValueForCode(oData.positionInParent) + ")", selector: "positionInParent" });
+
+    if (oData.metadata.lumiraType) {
+        aOutput.push({ parent: false, group: "Metadata", name: "Lumira-Type", value: oData.metadata.componentName, code: "lumiraType(" + this._formatValueForCode(oData.metadata.lumiraType) + ")", selector: "metadata.lumiraType" });
+    }
+    for (let i = 0; i < oData.parents.length; i++) {
+        aOutput.push({ parent: true, group: "Metadata", name: "Parent Class-Name", value: oData.parents[i].metadata.elementName, selector: "parentAnyLevel.metadata.elementName", code: "parentElementName(" + this._formatValueForCode(oData.parents[i].metadata.elementName) + ")" });
+    }
+
+    for (let s in oData.property) {
+        aOutput.push({ parent: false, group: "Property", name: s, value: oData.property[s], code: "property('" + s + "'," + this._formatValueForCode(oData.property[s]) + ")", selector: "metadata.property." + s });
+    }
+    for (let i = 0; i < oData.parents.length; i++) {
+        for (let s in oData.parents[i].property) {
             aOutput.push({
-                type: sPattern,
-                name: sObj,
-                value: sValue
+                parent: true, group: "Property", name: "Parent (" + (i + 1) + "): " + s, value: oData.parents[i].property[s], selector: "parentAnyLevel.property." + s, code: "parentPropery(" + s + "'," + this._formatValueForCode(oData.parents[i].property[s]) + ")"
             });
         }
-    };
-
-    for (var sLine in oOutput) {
-        //@ts-ignore
-        if ($.isArray(oOutput[sLine])) {
-            for (var i = 0; i < oOutput[sLine]; i++) {
-                fnAddToOutput(sLine, oOutput[sLine][i]);
-            }
-        } else {
-            fnAddToOutput(sLine, oOutput[sLine]);
-        }
     }
 
+    aOutput.push({ parent: false, group: "Table-Settings", name: "Inside a Table", value: oData.tableSettings.insideATable, code: "insideATable()", selector: "tableSettings.insideATable" });
+    aOutput.push({ parent: false, group: "Table-Settings", name: "Table-Row", value: oData.tableSettings.tableRow, code: "row(" + this._formatValueForCode(oData.tableSettings.tableRow) + ")", selector: "tableSettings.tableRow" });
+    aOutput.push({ parent: false, group: "Table-Settings", name: "Table-Column", value: oData.tableSettings.tableCol, code: "column(" + this._formatValueForCode(oData.tableSettings.tableCol) + ")", selector: "tableSettings.tableCol" });
+
+    for (let s in oData.smartContext) {
+        aOutput.push({ parent: false, group: "Context", name: s, value: oData.smartContext[s], code: "context('" + s + "'," + this._formatValueForCode(oData.smartContext[s]) + ")", selector: "smartContext." + s });
+    }
+
+    for (let s in oData.binding) {
+        aOutput.push({ parent: false, group: "Binding", name: s, value: oData.binding[s].path, code: "bindingPath('" + s + "'," + this._formatValueForCode(oData.binding[s].path) + ")", selector: "binding." + s });
+    }
+
+    for (let s in oData.lumiraProperty) {
+        aOutput.push({ parent: false, group: "Lumira-Property", name: s, value: oData.lumiraProperty[s], code: "lumiraProperty('" + s + "'," + this._formatValueForCode(oData.lumiraProperty[s]) + ")", selector: "lumiraProperty." + s });
+    }
+
+    for (let s in oData.customData) {
+        aOutput.push({ parent: false, group: "Custom-Data", name: s, value: oData.customData[s], code: "customData('" + s + "'," + this._formatValueForCode(oData.customData[s]) + ")", selector: "customData." + s });
+    }
+
+    for (let s in oData.childrenCount) {
+        aOutput.push({ parent: false, group: "Children-Count", name: s === "_all" ? "All" : s, value: oData.childrenCount[s], code: "childrenCount('" + s + "'," + this._formatValueForCode(oData.childrenCount[s]) + (s === "_all" ? "" : (",'" + s + "'")) + ")", selector: "childrenCount." + s });
+    }
+
+    if (oData.label && oData.label.textBinding) {
+        aOutput.push({ parent: false, group: "Label", name: "Text-Binding", value: oData.label.textBinding, code: "labelTextBinding(" + this._formatValueForCode(oData.label.textBinding) + ")", selector: "label.textBinding" });
+    }
+    for (let s in oData.label.property) {
+        aOutput.push({ parent: false, group: "Label", name: s, value: oData.label.property[s], code: "labelProperty('" + s + "'," + this._formatValueForCode(oData.label.property[s]) + ")", selector: "label.property." + s });
+    }
+    for (let s in oData.itemdata) {
+        aOutput.push({ parent: false, group: "Itemdata", name: s, value: oData.itemdata[s], code: "itemdata('" + s + "'," + this._formatValueForCode(oData.itemdata[s]) + ")", selector: "itemdata." + s });
+    }
+
+    for (var i = 0; i < aOutput.length; i++) {
+        var sVal = this._getValueFromSelector(aOutput[i].selector);
+        aOutput[i].valueAsStr = (typeof aOutput[i].value === "undefined" || !aOutput[i].value.toString) ? "undefined" : aOutput[i].value.toString();
+        aOutput[i].selectorValue = sVal ? sVal : "";
+        aOutput[i].selectorAvailable = sVal !== null;
+        aOutput[i].selectorValueStatus = (aOutput[i].selectorValue === aOutput[i].value) ? "Success" : "Error";
+
+    }
+
+    aOutput = aOutput.filter(function (e) {
+        return !(e.selectorAvailable === false && typeof e.value === "undefined");
+    });
+    var oSelDialog = this._getTableSelectDialog(aOutput);
+    oSelDialog.open();
+
+    var aItems = this._oTable.getItems();
+    for (var i = 0; i < aOutput.length; i++) {
+        if ((aOutput[i].selectorValue.indexOf("parentAnyLevel") === -1 && aOutput[i].selectorAvailable === true) ||
+            (aOutput[i].selectorValue.indexOf("parentAnyLevel") !== -1 && aOutput[i].selectorValueStatus === "Success" && aOutput[i].selectorAvailable === true)) {
+            this._oTable.setSelectedItem(aItems[i]);
+        }
+    }
+    this._updateCodeAndFoundItems();
 
     //@ts-ignore
-    var oSelDialog = this._getTableSelectDialog();
-    var oMdl = new sap.ui.model.json.JSONModel({ items: aOutput });
-    oSelDialog.setModel(oMdl);
-    oSelDialog.open();
     this._bSelectDialogIsOpen = true;
-
-    oSelDialog.attachClose(function () {
-        this._bSelectDialogIsOpen = false;
-    }.bind(this));
 };
 
-ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
+ui5TestCafeSelectorDef.prototype._getHammerheadShadowUiByClass = function (sClassName) {
+    //status-hammerhead-shadow-ui
+    //locked-hammerhead-shadow-ui
+    //@ts-ignore
+    const hammerhead = window["%hammerhead%"];
+    const registerServiceWorker = hammerhead.nativeMethods.getElementsByClassName;
+    return registerServiceWorker.call(document, sClassName)[0];
+}
+
+ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
+    const oDOMNode = this._getHammerheadShadowUiByClass("locked-hammerhead-shadow-ui");
+    var event = new MouseEvent('mousedown', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+    });
+    oDOMNode.dispatchEvent(event);
+
+    const oDOMForArrow = this._getHammerheadShadowUiByClass("cursor-hammerhead-shadow-ui");
+    $(oDOMForArrow).css("display", "none");
+
+    this._recordModeIdentifierBase = id ? id : null;
+
     //@ts-ignore
     $("<style type='text/css'>.UI5TR_ElementHover,\
             .UI5TR_ElementHover * {\
@@ -2292,6 +2489,7 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
     var that = this;
     this._bSelectDialogIsOpen = false;
 
+    var fnMouseOverBefore = document.onmouseover;
     document.onmouseover = function (e) {
         if (that._bSelectDialogIsOpen === true) {
             return;
@@ -2303,6 +2501,7 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
         el.classList.add("UI5TR_ElementHover");
     };
 
+    var fnMouseOutBefore = document.onmouseout;
     document.onmouseout = function (e) {
         //@ts-ignore
         var e = e || _wnd.window.event,
@@ -2312,7 +2511,11 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
     }
 
 
-    document.addEventListener('click', function (event) {
+    var fnClickEventListener = function (event) {
+        if (that._bSelectDialogIsOpen === true) {
+            return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -2320,8 +2523,28 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function () {
         event = event || window.event;
         var el = event.target || event.srcElement;
         window.ui5TestCafeSelector.onClickInRecordMode(el);
+    };
 
-    }, true);
+    document.addEventListener('click', fnClickEventListener, true);
+
+    if (this._recordModeIdentifierBase) {
+        debugger;
+        var aItems = this.findBy(this._recordModeIdentifierBase);
+        if (aItems && aItems.length > 0) {
+            this.onClickInRecordMode(aItems[0]);
+        }
+    }
+
+    return new Promise(function (resolve) {
+        this._fnRecordModeSelectResolve = function () {
+            $(oDOMForArrow).css("display", "");
+            this._oCurrentItemInRecordMode = null;
+            document.removeEventListener("click", fnClickEventListener, true);
+            document.onmouseover = fnMouseOverBefore;
+            document.onmouseout = fnMouseOutBefore;
+            resolve();
+        };
+    }.bind(this));
 }
 
 window.ui5TestCafeSelector = new ui5TestCafeSelectorDef();

@@ -184,6 +184,12 @@ class ui5StepsDef {
         }
         this.getCurSteps(sCurTestName).push(step);
 
+        let sStepDescr = "Step " + step.stepId + ": action: " + this.getStepDescr(step.stepType) + (activity ? ", " + activity : "") + " for element " + sFormat;
+        if (selector instanceof UI5BaseBuilder) {
+            selector.actionDescription(sStepDescr);
+        }
+
+
         let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
         if (activity) {
             sText += ", " + activity;
@@ -297,7 +303,7 @@ export interface ui5SupportAssistantAssertion {
 };
 
 interface ui5ActionDefIntf {
-    debugSelector(): Promise<void>;
+    debugSelector(selector?: UI5ChainSelection): Promise<void>;
     traceSelector(selector: UI5ChainSelection, traceOptions?: ui5TraceOptions): Promise<void>;
     pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise;
     blur(): ui5ActionDefPromise;
@@ -342,8 +348,8 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
         return ui5ActionDef.instances[0];
     }
 
-    public async debugSelector(): Promise<void> {
-        return this.getRunDef().debugSelector();
+    public async debugSelector(selector?: UI5ChainSelection): Promise<void> {
+        return this.getRunDef().debugSelector(selector);
     }
 
     public async deactivateAnimation(): Promise<void> {
@@ -449,23 +455,14 @@ class ui5ActionDef implements ui5ActionDefIntf {
         return this.lclTestRun;
     }
 
-    public async debugSelector() {
-        const cntStart = ClientFunction(function () {
-            //@ts-ignore
-            sap.m.MessageToast.show("Please press 'Unlock' and afterwards 'Resume'");
-        });
-        const cntWaitLodaed = ClientFunction(() => {
+    public async debugSelector(selector?: UI5ChainSelection) {
+        var oId = (<any>selector)?._id;
+        const cntStart = ClientFunction(function (oId) {
             // @ts-ignore
-            window.ui5TestCafeSelector.startRecordMode();
-            return new Promise(function (resolve, reject) {
-
-            });
+            return window.ui5TestCafeSelector.startRecordMode(oId);
         });
-        await cntStart();
-        await this.t.debug();
-        await cntWaitLodaed();
+        await cntStart(oId);
     }
-
 
     private async _logSelector(traceOptions?: ui5TraceOptions) {
         const fnGetLog = ClientFunction((traceOptions?: ui5TraceOptions): ui5TraceSelectorResultOverview => {
@@ -549,7 +546,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
 
     private _getSelector(selector: UI5ChainSelection | Selector, step: ui5ActionStep): Selector {
         let iNumber = undefined;
-        if (selector instanceof UI5ChainSelection) {
+        if (selector instanceof UI5BaseBuilder) {
             if (selector.hasOwnTimeout()) {
                 iNumber = (<any>selector)._timeout;
             } else if (step.isFirstUI5Selector === true) {
@@ -559,8 +556,16 @@ class ui5ActionDef implements ui5ActionDefIntf {
                     iNumber = undefined; //reset to default..
                 }
             }
+
+            if (ui5Config.timeoutIncreaseFactor > 1) {
+                if (!iNumber) {
+                    iNumber = (<any>this.t).testRun.opts.selectorTimeout * ui5Config.timeoutIncreaseFactor;
+                } else {
+                    iNumber = iNumber * ui5Config.timeoutIncreaseFactor;
+                }
+            }
         }
-        let oSel = selector instanceof UI5ChainSelection ? selector.build(true, iNumber) : selector;
+        let oSel = selector instanceof UI5BaseBuilder ? selector.build(true, iNumber) : selector;
         return oSel;
     }
 
@@ -748,7 +753,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
     public takeElementScreenshot(selector: UI5ChainSelection | Selector, path: string, options?: TakeElementScreenshotOptions): ui5ActionDefPromise {
         let oAction = ui5Steps.addStep(this.t, ui5StepType.TAKE_ELEMENT_SCREENSHOT, ui5StepStatus.QUEUED, selector);
 
-        var oProm = this.t.takeElementScreenshot(selector instanceof UI5ChainSelection ? selector.build(true) : selector, path, options);
+        var oProm = this.t.takeElementScreenshot(selector instanceof UI5BaseBuilder ? selector.build(true) : selector, path, options);
         oProm = this._delegateAPIToPromise(this, oProm);
 
         oProm.then(function () { //dmmy..

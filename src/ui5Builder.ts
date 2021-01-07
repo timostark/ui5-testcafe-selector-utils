@@ -4,6 +4,7 @@ import {
 } from "testcafe";
 import { UI5DataResult, UI5Selector, UI5DataCallback, UI5SelectorDef } from "./ui5Selector";
 import { ui5AssertDef, ui5Assert, ui5AssertOperator, ui5AssertOperatorVisible, ui5AssertOperatorExists } from "./ui5Asserts";
+import { ui5Config } from "./ui5Config";
 
 export enum ui5SACWidgetType {
     Chart = 1,
@@ -107,6 +108,15 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
         return new UI5MessageToast(this)
     }
 
+    component(component: string): B {
+        this._id = this._enhanceWith(this._id, {
+            metadata: {
+                componentName: component
+            }
+        });
+        return this.thisPointer;
+    }
+
     element(sElement: string | string[]): B {
         this._id = this._enhanceWith(this._id, {
             metadata: {
@@ -174,6 +184,26 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
             }
         }
         return this._mergeDeep(target, ...sources);
+    }
+
+    labelProperty(propertyName: string, propertyValue: any): B {
+        var oPath: any = {};
+        oPath[propertyName] = propertyValue;
+        this._id = this._enhanceWith(this._id, {
+            label: {
+                property: oPath
+            }
+        });
+        return this.thisPointer;
+    }
+
+    labelTextBinding(bindingPath: string): B {
+        this._id = this._enhanceWith(this._id, {
+            label: {
+                textBinding: bindingPath
+            }
+        });
+        return this.thisPointer;
     }
 
     protected _enhanceWith(id: any, enhanceWith: any): any {
@@ -268,9 +298,14 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
         var oPath: any = {};
         oPath[itemPropertyName] = itemPropertyValue;
         this._id = this._enhanceWith(this._id, {
-            itemdata: {
-                property: oPath
-            }
+            itemdata: oPath
+        });
+        return this.thisPointer;
+    }
+
+    actionDescription(actionDescr: string): B {
+        this._id = this._enhanceWith(this._id, {
+            actionDescription: actionDescr
         });
         return this.thisPointer;
     }
@@ -319,8 +354,10 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
 
     childWithId(id: string): B {
         this._id = this._enhanceWith(this._id, {
-            hasChildWith: {
-                id: id
+            atLeastOneChild: {
+                identifier: {
+                    id: id
+                }
             }
         });
 
@@ -333,8 +370,24 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
 
     childWithClassName(className: string): B {
         this._id = this._enhanceWith(this._id, {
-            hasChildWith: {
-                className: className
+            atLeastOneChild: {
+                metadata: {
+                    elementName: className
+                }
+            }
+        });
+
+        return this.thisPointer;
+    }
+
+    childWithProperty(propertyName: string, propertyValue: string): B {
+        var oPath: any = {};
+        oPath[propertyName] = propertyValue;
+        this._id = this._enhanceWith(this._id, {
+            atLeastOneChild: {
+                metadata: {
+                    property: oPath
+                }
             }
         });
 
@@ -345,7 +398,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
         this._id = this._enhanceWith(this._id, {
             childrenCount: {
                 count: cnt,
-                className: className
+                className: className ? className : "_all"
             }
         });
 
@@ -478,7 +531,12 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
             return this._domQuery;
         }
 
-        let sName = this._name + " ( " + JSON.stringify(this._id) + " )";
+        //delete actionDescription if available...
+        var oObj = JSON.parse(JSON.stringify(this._id));
+        delete oObj.actionDescription;
+        delete oObj.selectAll;
+
+        let sName = this._name + " ( " + JSON.stringify(oObj) + " )";
         return sName;
     }
 
