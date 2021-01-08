@@ -4,7 +4,7 @@ To use a UI5 based selector always use the initialization method `ui5()`. Availa
 
 ### Control-Type Selectors
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `button()`      | Element of type sap.m.Button |
 | `link()`      | Element of type sap.m.Link |
 | `text()`      | Element of type sap.m.Text |
@@ -21,7 +21,7 @@ To use a UI5 based selector always use the initialization method `ui5()`. Availa
 
 ### Attribute Selectors
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `id(id: string)`      | Checks if the provided ID is part of the item id (substr is used internally) |
 | `component(component: string)`      | Checks if the element is assigned to specified component |
 | `interactable()`      | Checks that the element is interactable, which means that it is enabled, visible of non-zero size and not busy. Note that this selector is automatically added in case you are performing actions on a selector |
@@ -38,7 +38,7 @@ To use a UI5 based selector always use the initialization method `ui5()`. Availa
 
 ## Table Selectors
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `row(sRow : number)`      |If the element is inside a table (sap.m.List, sap.ui.Table (and related)) you can check the table row of the given element|
 | `column(sCol : number)`      |If the element is inside a table (sap.m.List, sap.ui.Table (and related)) you can check the table column of the given element|
 | `columnDescr(sCol : string)`      |If the element is inside a table (sap.m.List, sap.ui.Table (and related)) you can check the table column title description (label) of the given element|
@@ -47,7 +47,7 @@ To use a UI5 based selector always use the initialization method `ui5()`. Availa
 
 ## Parent and Children Selectors
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `parent(selector: ui5())`      |Allows you to specifiy any selector (with the API described here) which should be the any parent of the given element.|
 | `parentId(id: string)`      |Checks if any parent has the given ID|
 | `parentProperty(propertyName: string, propertyValue: any)`      |Checks if any parent has the given property name and value assigned|
@@ -60,19 +60,19 @@ To use a UI5 based selector always use the initialization method `ui5()`. Availa
 
 ## Adjusting Selector Result
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `domChildWith(sDomWith : string)`      |Adjust the selected DOM element. Sometimes you do not want to work on the root node element of a UI5 application, but instead on a subnode, which itself is no own UI5 id. You can specifiy the relative path to this dom child here|
 
 ## Related Elements
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `labelProperty(propName: string, propValue: any)`      |Checks the related label of a control (e.g. in a Form) for a property. Normally you will check the `text` property of the element to check the text of a label. |
 | `labelTextBinding(i18nText: string)`      |Checks the related label of a control (e.g. in a Form) for its 18n text binding path|
 | `itemdata(itemProp: string, value: string)`      |For certain UI5 elements (e.g. ComboBox), the items holding key values are not those visible. To cirumvent this, you can get the actual itemdata properties, which are assigned / bound inside your ComboBox items aggregation using this method|
 
 ## SAP Analytics Cloud Selectors
 | Selector-Method        | UI5 Representation      
-| ------------- |:-------------:|:-------------:|
+| ------------- |:-------------:|
 | `sac()`      |Returns a specialized selector for SAP Analytics Cloud|
 | `widgetId(id: str)`      |Provides the widget-id of the widget to be analyzed|
 | `widgetType(type: ui5SACWidgetType)`      |Allows you to specify the widget type you are searching for. Currently only chart, table and text are supported|
