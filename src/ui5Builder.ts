@@ -279,18 +279,9 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
         return this.thisPointer;
     }
 
-    sacWidget(widgetType: ui5SACWidgetType): UI5SACWidgetChainSelection {
-        if (widgetType === ui5SACWidgetType.Chart) {
-            new UI5SACWidgetChainSelection(this.element(["sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget"]));
-        } else if (widgetType === ui5SACWidgetType.Table) {
-
-        } else if (widgetType === ui5SACWidgetType.Text) {
-
-        }
-
+    sac(): UI5SACWidgetChainSelection {
         return new UI5SACWidgetChainSelection(this.thisPointer);
     }
-
 }
 
 export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5ParentBuilder<B> {
@@ -380,7 +371,7 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
         return this.thisPointer;
     }
 
-    childWithProperty(propertyName: string, propertyValue: string): B {
+    childWithProperty(propertyName: string, propertyValue: any): B {
         var oPath: any = {};
         oPath[propertyName] = propertyValue;
         this._id = this._enhanceWith(this._id, {
@@ -671,6 +662,26 @@ export class UI5SACWidgetChainSelection extends UI5BaseBuilder<UI5SACWidgetChain
         return this;
     }
 
+    widgetChart(): UI5SACWidgetChartChainSelection {
+        return new UI5SACWidgetChartChainSelection(this.element(["sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget"]));
+    }
+
+    widgetTable(): UI5SACWidgetTableChainSelection {
+        return new UI5SACWidgetTableChainSelection(this.element(["sap.fpa.ui.story.entity.dynamictable.DynamicTableWidget"]));
+    }
+
+    widgetType(widgetType: ui5SACWidgetType): UI5SACWidgetChainSelection {
+        if (widgetType === ui5SACWidgetType.Chart) {
+            return this.element(["sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget"]);
+        } else if (widgetType === ui5SACWidgetType.Table) {
+            return this.element(["sap.fpa.ui.story.entity.dynamictable.DynamicTableWidget"]);
+        } else if (widgetType === ui5SACWidgetType.Text) {
+            return this.element(["sap.fpa.ui.story.entity.text.TextWidget"]);
+        }
+
+        return new UI5SACWidgetChainSelection(this.thisPointer);
+    }
+
     widgetId(id: string): UI5SACWidgetChainSelection {
         this._id = this._enhanceWith(this._id, {
             sac: {
@@ -678,6 +689,85 @@ export class UI5SACWidgetChainSelection extends UI5BaseBuilder<UI5SACWidgetChain
             }
         });
         return this.thisPointer;
+    }
+
+    filterPopupItem(text: string): UI5SACWidgetChainSelection {
+        return this.element("sap.fpa.ui.filters.EffectiveFilterWidgetItemBaseLabel").property("text", text);
+    }
+}
+
+export class UI5SACWidgetTableChainSelection extends UI5SACWidgetChainSelection {
+    dataPoint(x: number, y: number): UI5SACWidgetTableChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                dataPoint: {
+                    x: x,
+                    y: y
+                }
+            }
+        });
+
+        return this;
+    }
+}
+
+export class UI5SACWidgetChartChainSelection extends UI5SACWidgetChainSelection {
+    dataPoint(x: number, y: number): UI5SACWidgetChartChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                dataPoint: {
+                    x: x,
+                    y: y
+                }
+            }
+        });
+
+        return this;
+    }
+    chartTitle(title: string): UI5SACWidgetChartChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                chart: {
+                    chartTitle: title
+                }
+            }
+        });
+
+        return this;
+    }
+    chartSubTitle(subTitle: string): UI5SACWidgetChartChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                chart: {
+                    chartSubTitle: subTitle
+                }
+            }
+        });
+
+        return this;
+    }
+
+    chartType(type: string): UI5SACWidgetChartChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                chart: {
+                    type: type
+                }
+            }
+        });
+
+        return this;
+    }
+    chartDataLabelVisible(dataLabelVisible: boolean): UI5SACWidgetChartChainSelection {
+        this._id = this._enhanceWith(this._id, {
+            sac: {
+                chart: {
+                    dataLabelVisible: dataLabelVisible
+                }
+            }
+        });
+
+        return this;
     }
 }
 

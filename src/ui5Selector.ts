@@ -62,8 +62,40 @@ interface UI5TableData {
     data: any[];
 }
 
+interface ui5SACRelatedElementsData {
+    filterOpenLink?: string;
+    filterDeleteLink?: string;
+    filterPopup?: string;
+    titleControl?: string;
+};
+
+interface ui5SACFilterData {
+    attribute: string,
+    values: string[],
+    exclude: boolean
+};
+
+interface ui5SACDataPointData {
+    xValue: number,
+    yValue: number,
+    measures: string[],
+    dimensions: string[]
+};
+
+interface ui5SACChartData {
+    title: string,
+    subTitle: string,
+    type: string,
+    dataLabelVisible: boolean
+};
+
 interface UI5SACData {
-    widgetId?: string
+    widgetId?: string;
+    chart?: ui5SACChartData;
+    filters?: ui5SACFilterData;
+    relatedElements?: ui5SACRelatedElementsData;
+    dataPoints?: ui5SACDataPointData[];
+    tableData?: any;
 }
 
 interface UI5SelectorCSSValues {

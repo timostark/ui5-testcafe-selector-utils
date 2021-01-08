@@ -21,6 +21,7 @@ function ui5TestCafeSelectorDef() {
     this._ui5LastSelectorDef = {};
     this._ui5CurrentSelectorItem = "";
     this._ui5CurrentSelectorTarget = "";
+    this._oDomFieldMapBy = {};
     return this;
 }
 
@@ -48,7 +49,6 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
 
     //search for identifier of every single object..
     let bFound = false;
-    let sSelectorStringForJQuery = "";
     this._ui5SelectorLog = {};
     this._ui5SelectorLogOK = {};
     this._ui5SelectorLogFound = [];
@@ -104,6 +104,10 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
             if (oElement) {
                 aItem = _wnd.$(oElement);
             }
+        }
+
+        if (this._oDomFieldMapBy[oItem.getId()]) {
+            aItem = _wnd.$(this._oDomFieldMapBy[oItem.getId()]);
         }
 
         if (id.selectAll === true) {
@@ -1250,14 +1254,77 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
     }
 
     if (typeof id.sac !== "undefined") {
-        let oRet = this._getSACData(oItem);
+        if (this._isSACWidgetBusy(oItem)) {
+            this._logWrongValue("interactable.sac", false, true);
+            return false;
+        }
+        this._logCorrectValue("interactable.sac", false, false);
+
 
         if (typeof id.sac.widgetId !== "undefined") {
-            if (id.sac.widgetId !== oRet.widgetId) {
-                this._logWrongValue("id.sac.widgetid", id.sac.widgetId, oRet.widgetId);
+            if (!oItem.getWidgetId || id.sac.widgetId !== oItem.getWidgetId()) {
+                this._logWrongValue("id.sac.widgetid", id.sac.widgetId, oItem.getWidgetId ? oItem.getWidgetId() : null);
                 return false;
             }
-            this._logCorrectValue("id.sac.widgetid", id.sac.widgetId, oRet.widgetId);
+            this._logCorrectValue("id.sac.widgetid", id.sac.widgetId, oItem.getWidgetId ? oItem.getWidgetId() : null);
+        }
+
+        let oRet = this._getSACData(oItem);
+
+        if (typeof id.sac.chart !== "undefined") {
+            if (typeof id.sac.chart.title !== "undefined") {
+                if (d.sac.chart.title !== oRet.chart.title) {
+                    this._logWrongValue("id.sac.chart.title", id.sac.chart.title, oRet.chart.title);
+                    return false;
+                }
+                this._logCorrectValue("id.sac.chart.title", id.sac.chart.title, oRet.chart.title);
+            }
+            if (typeof id.sac.chart.subTitle !== "undefined") {
+                if (id.sac.chart.subTitle !== oRet.chart.subTitle) {
+                    this._logWrongValue("id.sac.chart.subTitle", id.sac.chart.subTitle, oRet.chart.subTitle);
+                    return false;
+                }
+                this._logCorrectValue("id.sac.chart.subTitle", id.sac.chart.subTitle, oRet.chart.subTitle);
+            }
+            if (typeof id.sac.chart.type !== "undefined") {
+                if (id.sac.chart.type !== oRet.chart.type) {
+                    this._logWrongValue("id.sac.chart.type", id.sac.chart.type, oRet.chart.type);
+                    return false;
+                }
+                this._logCorrectValue("id.sac.chart.type", id.sac.chart.type, oRet.chart.type);
+            }
+            if (typeof id.sac.chart.dataLabelVisible !== "undefined") {
+                if (id.sac.chart.dataLabelVisible !== oRet.chart.dataLabelVisible) {
+                    this._logWrongValue("id.sac.chart.dataLabelVisible", id.sac.chart.dataLabelVisible, oRet.chart.dataLabelVisible);
+                    return false;
+                }
+                this._logCorrectValue("id.sac.chart.dataLabelVisible", id.sac.chart.dataLabelVisible, oRet.chart.dataLabelVisible);
+            }
+        }
+
+        if (typeof id.sac.dataPoint !== "undefined") {
+            //check if data-point is actually available..   
+            let bDataPointFound = false;
+            for (var i = 0; i < oRet.dataPoints.length; i++) {
+                if (oRet.dataPoints[i].xValue === id.sac.dataPoint.x && oRet.dataPoints[i].yValue === id.sac.dataPoint.y) {
+                    bDataPointFound = true;
+
+                    //we have to adjust this item later on..
+                    this._oDomFieldMapBy[oItem.getId()] = oRet.dataPoints[i].domTarget;
+                    break;
+                }
+            }
+            if (bDataPointFound === false) {
+                //for tables we might have a special row/col (e.g. for the title) - we will allow interactions here, even if not available.
+                var oCellDomRef = $('#' + oItem.getId() + ' td').filter('*[data-row="' + id.sac.dataPoint.x + '"]').filter('*[data-col="' + id.sac.dataPoint.y + '"]');
+                if (oCellDomRef.length === 0) {
+                    this._logWrongValue("id.sac.dataPoint", id.sac.dataPoint.x + "/" + id.sac.dataPoint.y, "not available");
+                    return false;
+                } else {
+                    this._oDomFieldMapBy[oItem.getId()] = oCellDomRef[0];
+                }
+            }
+            this._logCorrectValue("id.sac.dataPoint", id.sac.dataPoint.x + "/" + id.sac.dataPoint.y, id.sac.dataPoint.x + "/" + id.sac.dataPoint.y);
         }
     }
 
@@ -1370,6 +1437,7 @@ ui5TestCafeSelectorDef.prototype.find = function (id) {
 
     this._ui5LastSelectorDef = id;
     this._allElements = this._getAllElements();
+    this._oDomFieldMapBy = {};
 
     //First Step: Early exits, in case anything suspicious is happening..
     //1.1: early exit in case of transitions..
@@ -1978,13 +2046,190 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     }
 
     oReturn.sac = this._getSACData(oItem);
+    for (var i = 0; i < oReturn.sac.dataPoints.length; i++) {
+        delete oReturn.sac.dataPoints[i].domTarget;
+    }
 
     return oReturn;
 };
 
+ui5TestCafeSelectorDef.prototype._getSACTableData = function (oItem) {
+    var oReturn = {
+        chart: {},
+        filters: [],
+        relatedElements: {},
+        dataPoints: [],
+        tableData: []
+    };
+
+    oReturn.filters = this._readSACFilterData(oItem._getFiltersSync());
+
+    var oDataRegion = oItem.getTableController().getActiveDataRegion();
+    var aRows = oDataRegion.getCells();
+    var oHeaderCells = {};
+    var sCurrentTableId = oItem.getTableController().getView().getId();
+
+    oReturn.relatedElements = {
+        filterOpenLink: oDataRegion.data.key + "-" + sCurrentTableId + "-filterToken",
+        filterDeleteLink: null,
+        filterPopup: null
+    };
+
+    for (var iLine = 1; iLine < aRows.length; iLine++) {
+        var aCols = aRows[iLine];
+        var oDataLine = {};
+        var bHasFactCell = false;
+        var bInHeaderLine = false;
+
+        for (var iCol = 0; iCol < aCols.length; iCol++) {
+            var oCell = aCols[iCol];
+            if (oCell.isHeaderCell()) {
+                bInHeaderLine = true;
+            }
+            if ((oCell.isHeaderCell() || oCell.isMemberCell()) && bInHeaderLine === true) {
+                oHeaderCells[iCol] = {
+                    val: oCell.getFormattedValue(),
+                    rowIndex: iLine,
+                    colIndex: iCol
+                };
+                continue;
+            }
+            if (!oCell.isFactCell()) {
+                continue;
+            }
+            var oMemberContext = oCell.getCellMemberContext();
+            for (var sMember in oMemberContext) {
+                oDataLine[sMember] = oMemberContext[sMember].id;
+            }
+            oDataLine[oHeaderCells[iCol]] = oCell.getVal();
+            oDataLine._row = iLine;
+            bHasFactCell = true;
+
+            //add to line to data-cells..
+            var oCellDomRef = $('#' + oItem.getId() + ' td').filter('*[data-row="' + iLine + '"]').filter('*[data-col="' + iCol + '"]');
+
+            oReturn.dataPoints.push({
+                xValue: iCol,
+                yValue: iLine,
+                measures: oHeaderCells[iCol],
+                dimensions: oDataLine,
+                domTarget: oCellDomRef.length ? oCellDomRef[0] : null
+            });
+        }
+
+        if (bHasFactCell) {
+            oReturn.tableData.push(oDataLine);
+        }
+    }
+
+    return oReturn;
+};
+
+ui5TestCafeSelectorDef.prototype._readSACFilterData = function (aFilters) {
+    var aFiltersRet = [];
+    var aFiltersRelevant = aFilters.filter(function (e) {
+        if (e.entityId.find(function (f) { return f.id === "Version" })) {
+            return false;
+        }
+        return true;
+    });
+    for (var i = 0; i < aFiltersRelevant.length; i++) {
+        var sAttr = aFiltersRelevant[i].entityId.map(function (f) { return f.id; }).join(",");
+        var aValues = aFiltersRelevant[i].originalValues.map(function (e) {
+            return { displayName: e.displayName, operator: e.operator }
+        });
+        aFiltersRet.push({
+            attribute: sAttr,
+            values: aValues,
+            exclude: typeof aFiltersRelevant[i].filters.find(function (e) { return e.exclude === true; }) !== "undefined"
+        });
+    }
+    return aFiltersRet;
+};
+
+ui5TestCafeSelectorDef.prototype._getSACChartData = function (oItem) {
+    var oReturn = {
+        chart: {},
+        filters: [],
+        relatedElements: {},
+        dataPoints: [],
+        tableData: []
+    };
+    var oVizDefinition = oItem.getWidgetDefinition().definition.vizContent.vizDefinition;
+
+    oReturn.chart = {
+        title: oVizDefinition.chart.title,
+        subTitle: oVizDefinition.chart.subTitle,
+        type: oVizDefinition.chart.type,
+        dataLabelVisible: oVizDefinition.chart.properties.plotArea.dataLabel.visible
+    };
+
+    oReturn.filters = this._readSACFilterData(oVizDefinition.filters);
+
+    //get actual data..
+    var aData = oItem.oViz._infoChart.getAllPointsData();
+    oReturn.dataPoints = aData.map(function (e) {
+        //get all members for this dataPoint..
+        var oDimensions = {};
+        for (var j = 0; j < e.info.dimensions.length; j++) {
+            oDimensions[e.info.dimensions[j].dimensionDisplayName] = e.info.dimensions[j].members.join(",");
+        }
+        var oMeasures = [];
+        for (var j = 0; j < e.info.measures.length; j++) {
+            oMeasures.push(e.info.measures[j].measureDisplayName);
+        }
+        return {
+            yValue: e.target.point.y,
+            xValue: e.target.point.x,
+            dimensions: oDimensions,
+            measures: oMeasures,
+            domTarget: e.target
+        };
+    });
+
+    //get related settings..
+    oReturn.relatedElements = {
+        filterOpenLink: oItem.oViz.getFilterToken() ? oItem.oViz.getFilterToken()._captionLink.getId() : null,
+        filterDeleteLink: oItem.oViz.getFilterToken() ? oItem.oViz.getFilterToken()._oDeleteToken.getId() : null,
+        filterPopup: oItem.oViz.getFilterToken() ? oItem.oViz.getFilterToken()._toolPopup.getId() : null,
+        titleControl: oItem.oViz.getTitleControl() ? oItem.oViz.getTitleControl().getId() : null
+    };
+
+    return oReturn;
+}
+
+ui5TestCafeSelectorDef.prototype._isSACWidgetBusy = function (oItem) {
+    var sCls = oItem.getMetadata()._sClassName;
+    if (sCls === "sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget") {
+        return !oItem.oViz || oItem.oViz.isLoadingAnimationShown() || !oItem.oViz._infoChart;
+    } else if (sCls === "sap.fpa.ui.story.entity.dynamictable.DynamicTableWidget") {
+        return !oItem.getTableController() || !oItem.getTableController().getScrollableTable() || oItem.getTableController().getScrollableTable().getUpdateInProgress();
+    } else if (sCls === "sap.fpa.ui.story.entity.text.TextWidget") {
+
+    }
+    return false;
+}
+
 ui5TestCafeSelectorDef.prototype._getSACData = function (oItem) {
-    var oRet = {};
-    if (oItem && oItem.getWidgetId) {
+    var oRet = {
+        chart: {},
+        filters: [],
+        relatedElements: {},
+        dataPoints: [],
+        tableData: []
+    };
+
+    //depending on the widget type, we are "simply" getting
+    var sCls = oItem.getMetadata()._sClassName;
+    if (sCls === "sap.fpa.ui.story.entity.infochartviz.InfochartVizWidget") {
+        oRet = this._getSACChartData(oItem);
+    } else if (sCls === "sap.fpa.ui.story.entity.dynamictable.DynamicTableWidget") {
+        oRet = this._getSACTableData(oItem);
+    } else if (sCls === "sap.fpa.ui.story.entity.text.TextWidget") {
+
+    }
+
+    if (oItem.getWidgetId) {
         oRet.widgetId = oItem.getWidgetId();
     }
     return oRet;
@@ -2240,6 +2485,7 @@ ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function (aOutput) {
     });
     this._oPopover.addStyleClass("sapUiSizeCompact");
     this._oPopoverModel = new sap.ui.model.json.JSONModel({ items: aOutput, currentCode: "" });
+    this._oPopoverModel.setSizeLimit(10000);
     this._oPopover.setModel(this._oPopoverModel);
 
     oInput.bindValue("/currentCode");
@@ -2417,13 +2663,16 @@ ui5TestCafeSelectorDef.prototype.onClickInRecordMode = function (oDomNode) {
         aOutput.push({ parent: false, group: "Itemdata", name: s, value: oData.itemdata[s], code: "itemdata('" + s + "'," + this._formatValueForCode(oData.itemdata[s]) + ")", selector: "itemdata." + s });
     }
 
+    if (oData.sac) {
+        aOutput.push({ parent: false, group: "SAC", name: "Widget-Id", value: oData.sac.widgetId, code: "sac().widgetId(" + this._formatValueForCode(oData.sac.widgetId) + ")", selector: "sac.widgetId" });
+    }
+
     for (var i = 0; i < aOutput.length; i++) {
         var sVal = this._getValueFromSelector(aOutput[i].selector);
         aOutput[i].valueAsStr = (typeof aOutput[i].value === "undefined" || !aOutput[i].value.toString) ? "undefined" : aOutput[i].value.toString();
         aOutput[i].selectorValue = sVal ? sVal : "";
         aOutput[i].selectorAvailable = sVal !== null;
         aOutput[i].selectorValueStatus = (aOutput[i].selectorValue === aOutput[i].value) ? "Success" : "Error";
-
     }
 
     aOutput = aOutput.filter(function (e) {
@@ -2467,6 +2716,7 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
     $(oDOMForArrow).css("display", "none");
 
     this._recordModeIdentifierBase = id ? id : null;
+    this._recordModeAllowInteraction = false;
 
     //@ts-ignore
     $("<style type='text/css'>.UI5TR_ElementHover,\
@@ -2491,7 +2741,7 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
 
     var fnMouseOverBefore = document.onmouseover;
     document.onmouseover = function (e) {
-        if (that._bSelectDialogIsOpen === true) {
+        if (that._bSelectDialogIsOpen === true || that._recordModeAllowInteraction === true) {
             return;
         }
         //@ts-ignore
@@ -2510,9 +2760,8 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
         el.classList.remove("UI5TR_ElementHover");
     }
 
-
     var fnClickEventListener = function (event) {
-        if (that._bSelectDialogIsOpen === true) {
+        if (that._bSelectDialogIsOpen === true || that._recordModeAllowInteraction === true) {
             return;
         }
 
@@ -2535,11 +2784,40 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
         }
     }
 
+    var oCurrentlyPressed = {};
+    var fnOnKeyDown = function (e) {
+        oCurrentlyPressed[e.key] = true;
+
+        if (that._bSelectDialogIsOpen) {
+            return;
+        }
+
+        if (oCurrentlyPressed["Control"] && oCurrentlyPressed["Alt"] && (oCurrentlyPressed["C"] || oCurrentlyPressed["c"])) {
+            that._recordModeAllowInteraction = that._recordModeAllowInteraction === false;
+            if (that._recordModeAllowInteraction) {
+                sap.m.MessageToast.show("Interaction Mode activated");
+            } else {
+                sap.m.MessageToast.show("Record Mode activated");
+            }
+        }
+    };
+    var fnOnKeyUp = function (e) {
+        if (oCurrentlyPressed[e.key]) {
+            oCurrentlyPressed[e.key] = false;
+        }
+    };
+    sap.m.MessageToast.show("Press CTRL+ALT+C to switch between record and interaction mode...");
+
+    document.addEventListener("keydown", fnOnKeyDown);
+    document.addEventListener("keyup", fnOnKeyUp);
+
     return new Promise(function (resolve) {
         this._fnRecordModeSelectResolve = function () {
             $(oDOMForArrow).css("display", "");
             this._oCurrentItemInRecordMode = null;
             document.removeEventListener("click", fnClickEventListener, true);
+            document.removeEventListener("keydown", fnOnKeyDown);
+            document.removeEventListener("keyup", fnOnKeyUp);
             document.onmouseover = fnMouseOverBefore;
             document.onmouseout = fnMouseOutBefore;
             resolve();
