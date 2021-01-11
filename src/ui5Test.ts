@@ -3,7 +3,7 @@ import { ui5Proxy, ui5TraceOptions } from ".";
 import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResultOverview } from "./ui5Action"
 import { ui5Config } from "./ui5Config";
 import { ui5Coverage } from "./ui5Coverage";
-import { ui5CacheWriteHookDef, ui5CacheWriteMock } from "./ui5Cache";
+import { ui5CacheRequestHooks } from "./ui5Cache";
 
 export interface ui5FixtureProperties {
     disableCoverage: boolean
@@ -33,8 +33,6 @@ export function ui5Fixture(name: string, url: string, category?: string, additio
         .page(urlUse);
 }
 
-let ui5CacheMocks = ui5Config.cacheResources === true ? [ui5CacheWriteMock, new ui5CacheWriteHookDef()] : [];
-
 export function ui5Test(description: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;
 export function ui5Test(description: string, testCase: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;
 
@@ -54,7 +52,7 @@ export function ui5Test(description: string, testCase: any, func?: (actionDef: u
 
         ui5Steps.setConsoleErrorLogs(t, error);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
-        console.log("\u001b[1]m" + testCase + " : '" + description + "' stopped after " + sTime + "s\u001b[22]m");
+        console.log("\u001b[1m" + testCase + " : '" + description + "' stopped after " + sTime + "s\u001b[22m");
 
         if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
             await ui5Proxy.checkLoggedComponents(t);
@@ -72,23 +70,23 @@ export function ui5Test(description: string, testCase: any, func?: (actionDef: u
                 for (var i = 0; i < log.found.length; i++) {
                     consLength[log.found[i].id] = true;
                 }
-                console.log("\u001b[1]mFound items:" + Object.keys(consLength).length + "\u001b[22]m");
+                console.log("\u001b[1mFound items:" + Object.keys(consLength).length + "\u001b[22m");
                 if (log.found.length > 0) {
                     console.table(log.found, ["id", "target", "property", "expected", "actual"])
                 }
 
-                console.log("\u001b[1]mNot-Found items:" + Object.keys(log.notFound).length + "\u001b[22]m");
+                console.log("\u001b[1mNot-Found items:" + Object.keys(log.notFound).length + "\u001b[22m");
                 console.table(log.notFound, ["target", "property", "expected", "actual"]);
             }
         }
-    }).meta('TEST_CASE', testCase).requestHooks(ui5CacheMocks)(description, async t => {
+    }).meta('TEST_CASE', testCase).requestHooks(ui5CacheRequestHooks())(description, async t => {
         t.ctx.name = description;
         t.ctx.testCase = testCase;
 
         ui5ActionDef.currentTestRun = t;
         let ui5ActionsDefForRun = new ui5ActionDef(t);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
-        console.log("\u001b[1]m" + testCase + " : '" + description + "' started after " + sTime + "s\u001b[22]m");
+        console.log("\u001b[1m" + testCase + " : '" + description + "' started after " + sTime + "s\u001b[22m");
         await fnCall(ui5ActionsDefForRun, t);
     });
 }

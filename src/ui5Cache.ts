@@ -73,7 +73,7 @@ class CacheBufferDef {
     public writeFile(urlReq: string, data: any, headers: any, maxAge: number) {
         const url = this._adjustUrl(urlReq);
         const fileNameHash = crypto.createHash('md5').update(url).digest("hex");
-        const expires = new Date().getTime() + maxAge;
+        const expires = new Date().getTime() + (maxAge * 100);
         const fileName = `${process.env.APPDATA}/ui5-testcafe-selector-utils/tmp/buffer/` + fileNameHash;
         const fileNameHeader = fileName + "_h";
 
@@ -90,6 +90,12 @@ class CacheBufferDef {
         return new Promise((resolve, reject) => {
             const buf = this.cacheBuffer[url];
 
+            if (this.cacheDataBuffer[url]) {
+                resolve(this.cacheDataBuffer[url]);
+                return;
+            }
+            this.cacheDataBuffer[url] = {};
+
             fs.readFile(buf.fileName, (err: any, data: Buffer) => {
                 this.cacheDataBuffer[url].data = data;
                 if (this.cacheDataBuffer[url].data && this.cacheDataBuffer[url].dataHeader) {
@@ -103,6 +109,15 @@ class CacheBufferDef {
                 }
             });
         });
+    }
+
+
+    public existsData(urlReq: string): boolean {
+        const url = this._adjustUrl(urlReq);
+        if (this.cacheDataBuffer[url]) {
+            return true;
+        }
+        return false;
     }
 
     public exists(urlReq: string, withFileCheck: boolean = true): boolean {
@@ -192,7 +207,8 @@ export let ui5CacheWriteMock = RequestMock()
             }
         }
 
-        if (CacheBuffer.exists(req.url)) {
+        //use in mem cache from chrome after second loading..
+        if (CacheBuffer.exists(req.url) && CacheBuffer.existsData(req.url) === false) {
             return true;
         }
 
@@ -251,4 +267,8 @@ export class ui5CacheWriteHookDef extends RequestHook {
 
         CacheBuffer.writeFile(url, e.body, e.headers, cacheControl.maxAge);
     }
+}
+
+export function ui5CacheRequestHooks(): Object[] {
+    return ui5Config.cacheResources === true ? [ui5CacheWriteMock, new ui5CacheWriteHookDef()] : [];
 }

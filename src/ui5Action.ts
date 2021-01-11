@@ -212,11 +212,11 @@ class ui5StepsDef {
 
         let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " within " + sTime + "s";
         if (stat == ui5StepStatus.FAILED) {
-            sText = "\u001b[31]m" + sText + "\u001b[39]m";
+            sText = "\u001b[31m" + sText + "\u001b[39m";
         } else if (stat == ui5StepStatus.FAILED_UNPROCESSED) {
-            sText = "\u001b[33]m" + sText + "\u001b[39]m";
+            sText = "\u001b[33m" + sText + "\u001b[39m";
         } else if (stat == ui5StepStatus.PROCESSED) {
-            sText = "\u001b[32]m" + sText + "\u001b[39]m";
+            sText = "\u001b[32m" + sText + "\u001b[39m";
         }
 
         console.log(sText);
@@ -474,7 +474,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
             for (var i = 0; i < log.found.length; i++) {
                 consLength[log.found[i].id] = true;
             }
-            console.log("\u001b[1]mFound items:\u001b[22]m" + Object.keys(consLength).length);
+            console.log("\u001b[1mFound items:\u001b[22m" + Object.keys(consLength).length);
 
             if (log.found.length > 0) {
                 console.table(log.found, ["id", "target", "property", "expected", "actual"])
@@ -492,7 +492,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
                 }
             }
         }
-        console.log("\u001b[1]mNot-Found items:\u001b[22]m" + Object.keys(log.notFound).length);
+        console.log("\u001b[1mNot-Found items:\u001b[22m" + Object.keys(log.notFound).length);
         console.table(log.notFound, aCols);
     }
 
