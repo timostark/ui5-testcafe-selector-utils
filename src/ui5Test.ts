@@ -3,7 +3,7 @@ import { ui5Proxy, ui5TraceOptions } from ".";
 import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResultOverview } from "./ui5Action"
 import { ui5Config } from "./ui5Config";
 import { ui5Coverage } from "./ui5Coverage";
-import { ui5CacheWriteHook, ui5CacheWriteMock } from "./ui5Cache";
+import { ui5CacheWriteHookDef, ui5CacheWriteMock } from "./ui5Cache";
 
 export interface ui5FixtureProperties {
     disableCoverage: boolean
@@ -33,7 +33,7 @@ export function ui5Fixture(name: string, url: string, category?: string, additio
         .page(urlUse);
 }
 
-let ui5CacheMocks = ui5Config.cacheResources === true ? [ui5CacheWriteHook, ui5CacheWriteMock] : [];
+let ui5CacheMocks = ui5Config.cacheResources === true ? [ui5CacheWriteMock, new ui5CacheWriteHookDef()] : [];
 
 export function ui5Test(description: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;
 export function ui5Test(description: string, testCase: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;

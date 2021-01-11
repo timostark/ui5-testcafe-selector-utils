@@ -210,7 +210,7 @@ export let ui5CacheWriteMock = RequestMock()
         });
     });
 
-class CacheWriteHookDef extends RequestHook {
+export class ui5CacheWriteHookDef extends RequestHook {
     _cacheRequestId: any = {};
     constructor() {
         super(undefined, { includeBody: true, includeHeaders: true });
@@ -252,5 +252,3 @@ class CacheWriteHookDef extends RequestHook {
         CacheBuffer.writeFile(url, e.body, e.headers, cacheControl.maxAge);
     }
 }
-
-export let ui5CacheWriteHook = new CacheWriteHookDef();
