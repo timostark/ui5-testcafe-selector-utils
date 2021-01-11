@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.254",
+  "version": "0.0.257",
   "description": "Test-Cafe selector Utils",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,8 +24,6 @@
   },
   "homepage": "https://github.com/timostark/ui5-testcafe-selector-utils#readme",
   "dependencies": {
-    "colors": "^1.4.0",
-    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.2",
     "istanbul-lib-coverage": "^3.0.0",

@@ -1,13 +1,9 @@
 import { ClientFunction } from "testcafe";
 import { ui5Proxy, ui5TraceOptions } from ".";
-import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResult, ui5TraceSelectorResultOverview } from "./ui5Action"
+import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResultOverview } from "./ui5Action"
 import { ui5Config } from "./ui5Config";
 import { ui5Coverage } from "./ui5Coverage";
-var colors = require('colors/safe');
-
-try {
-    require('dotenv').config();
-} catch (err) { }
+import { ui5CacheWriteHook, ui5CacheWriteMock } from "./ui5Cache";
 
 export interface ui5FixtureProperties {
     disableCoverage: boolean
@@ -37,9 +33,11 @@ export function ui5Fixture(name: string, url: string, category?: string, additio
         .page(urlUse);
 }
 
+let ui5CacheMocks = ui5Config.cacheResources === true ? [ui5CacheWriteHook, ui5CacheWriteMock] : [];
 
 export function ui5Test(description: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;
 export function ui5Test(description: string, testCase: string, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn;
+
 
 export function ui5Test(description: string, testCase: any, func?: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
     var fnCall = func ? func : testCase;
@@ -56,7 +54,7 @@ export function ui5Test(description: string, testCase: any, func?: (actionDef: u
 
         ui5Steps.setConsoleErrorLogs(t, error);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
-        console.log(colors.bold(testCase + " : '" + description + "' stopped after " + sTime + "s"));
+        console.log("\u001b[1]m" + testCase + " : '" + description + "' stopped after " + sTime + "s\u001b[22]m");
 
         if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
             await ui5Proxy.checkLoggedComponents(t);
@@ -74,23 +72,23 @@ export function ui5Test(description: string, testCase: any, func?: (actionDef: u
                 for (var i = 0; i < log.found.length; i++) {
                     consLength[log.found[i].id] = true;
                 }
-                console.log(colors.bold("Found items:" + Object.keys(consLength).length));
+                console.log("\u001b[1]mFound items:" + Object.keys(consLength).length + "\u001b[22]m");
                 if (log.found.length > 0) {
                     console.table(log.found, ["id", "target", "property", "expected", "actual"])
                 }
 
-                console.log(colors.bold("Not-Found items:" + Object.keys(log.notFound).length));
+                console.log("\u001b[1]mNot-Found items:" + Object.keys(log.notFound).length + "\u001b[22]m");
                 console.table(log.notFound, ["target", "property", "expected", "actual"]);
             }
         }
-    }).meta('TEST_CASE', testCase)(description, async t => {
+    }).meta('TEST_CASE', testCase).requestHooks(ui5CacheMocks)(description, async t => {
         t.ctx.name = description;
         t.ctx.testCase = testCase;
 
         ui5ActionDef.currentTestRun = t;
         let ui5ActionsDefForRun = new ui5ActionDef(t);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
-        console.log(colors.bold(testCase + " : '" + description + "' started after " + sTime + "s"));
+        console.log("\u001b[1]m" + testCase + " : '" + description + "' started after " + sTime + "s\u001b[22]m");
         await fnCall(ui5ActionsDefForRun, t);
     });
 }

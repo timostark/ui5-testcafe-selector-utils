@@ -1,7 +1,4 @@
 
-
-var colors = require('colors/safe');
-
 import { ClientFunction, Selector, t } from "testcafe";
 import { ui5, ui5Config } from ".";
 import { ui5AssertDef, ui5AssertOperator, ui5AssertOperatorExists, ui5AssertOperatorVisible, ui5AssertOperatorCount } from "./ui5Asserts";
@@ -215,11 +212,11 @@ class ui5StepsDef {
 
         let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " within " + sTime + "s";
         if (stat == ui5StepStatus.FAILED) {
-            sText = colors.red(sText);
+            sText = "\u001b[31]m" + sText + "\u001b[39]m";
         } else if (stat == ui5StepStatus.FAILED_UNPROCESSED) {
-            sText = colors.yellow(sText);
+            sText = "\u001b[33]m" + sText + "\u001b[39]m";
         } else if (stat == ui5StepStatus.PROCESSED) {
-            sText = colors.green(sText);
+            sText = "\u001b[32]m" + sText + "\u001b[39]m";
         }
 
         console.log(sText);
@@ -477,7 +474,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
             for (var i = 0; i < log.found.length; i++) {
                 consLength[log.found[i].id] = true;
             }
-            console.log(colors.bold("Found items:") + Object.keys(consLength).length);
+            console.log("\u001b[1]mFound items:\u001b[22]m" + Object.keys(consLength).length);
 
             if (log.found.length > 0) {
                 console.table(log.found, ["id", "target", "property", "expected", "actual"])
@@ -495,7 +492,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
                 }
             }
         }
-        console.log(colors.bold("Not-Found items:") + Object.keys(log.notFound).length);
+        console.log("\u001b[1]mNot-Found items:\u001b[22]m" + Object.keys(log.notFound).length);
         console.table(log.notFound, aCols);
     }
 

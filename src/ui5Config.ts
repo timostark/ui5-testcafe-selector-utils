@@ -31,6 +31,8 @@ export interface ui5Configuration {
     firstSelectorTimeout: number;
     traceSelectorOnFailure: boolean;
     tileOpeningTimeout: number;
+    cacheResources: boolean;
+    clearCache: boolean;
 };
 
 class ui5ConfigDef {
@@ -59,7 +61,9 @@ class ui5ConfigDef {
                 firstSelectorTimeout: 60000,
                 tileOpeningTimeout: 60000,
 
-                traceSelectorOnFailure: false
+                traceSelectorOnFailure: false,
+                cacheResources: false,
+                clearCache: false
             };
         }
 
@@ -96,6 +100,8 @@ class ui5ConfigDef {
             this._config.coverage.timeoutIncreaseFactor = 1;
         }
         this._config.traceSelectorOnFailure = typeof this._config.traceSelectorOnFailure === "undefined" ? false : this._config.traceSelectorOnFailure;
+        this._config.clearCache = typeof this._config.clearCache === "undefined" ? false : this._config.clearCache;
+        this._config.cacheResources = typeof this._config.cacheResources === "undefined" ? false : this._config.cacheResources;
     }
 
     get traceSelectorOnFailure(): boolean {
@@ -112,6 +118,14 @@ class ui5ConfigDef {
 
     get tileOpeningTimeout(): number {
         return this._config.tileOpeningTimeout;
+    }
+
+    get clearCache(): boolean {
+        return this._config.clearCache;
+    }
+
+    get cacheResources(): boolean {
+        return this._config.cacheResources;
     }
 
     get launchpad(): ui5LaunchpadConfiguration {

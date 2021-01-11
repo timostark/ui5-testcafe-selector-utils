@@ -5,6 +5,16 @@
     "description": "A schema for UI5 testcafe",
     "type": "object",
     "properties": {
+        "clearCache": {
+            "description": "Clears cache on startup",
+            "type": "boolean",
+            "default": false
+        },
+        "cacheResources": {
+            "description": "Activates Caching of resources",
+            "type": "boolean",
+            "default": false
+        },
         "traceSelectorOnFailure": {
             "description": "In case of any failed test step the selector (which was present last) will be traced",
             "type": "boolean",
