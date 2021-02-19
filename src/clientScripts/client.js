@@ -30,6 +30,10 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
         return [];
     }
 
+    this._allElements = this._getAllElements();
+    this._ui5LastSelectorDef = id;
+    this._oDomFieldMapBy = {};
+
     //preprocess and adjust id..
     if (id && id.metadata && id.metadata.interactable && id.metadata.interactable.interactable === true) {
         id.metadata.interactable = {
@@ -570,7 +574,7 @@ ui5TestCafeSelectorDef.prototype._getSmartContextModelName = function (oItem) {
             } else if (!$.isEmptyObject(oItem.oPropagatedProperties.oBindingContexts)) {
                 bndgCtx = oItem.oPropagatedProperties.oBindingContexts;
             } else {
-                return false;
+                return undefined;
             }
             for (let sModelNameLoc in bndgCtx) {
                 sModelName = sModelNameLoc ? sModelNameLoc : "undefined";
@@ -1331,6 +1335,10 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
     if (id.parentAnyLevel) {
         let oParent = oItem.getParent();
         this._ui5CurrentSelectorTarget = "parentAnyLevel";
+        if (!oParent) {
+            this._logWrongValue("id.parentAnyLevel", "parent available", "-");
+            return false;
+        }
 
         //extremly simplistic here..
         while (oParent) {
@@ -1434,10 +1442,6 @@ ui5TestCafeSelectorDef.prototype.find = function (id) {
     if (typeof _wnd.sap === "undefined" || typeof _wnd.sap.ui === "undefined" || typeof _wnd.sap.ui.getCore === "undefined" || !_wnd.sap.ui.getCore() || !_wnd.sap.ui.getCore().isInitialized()) {
         return [];
     }
-
-    this._ui5LastSelectorDef = id;
-    this._allElements = this._getAllElements();
-    this._oDomFieldMapBy = {};
 
     //First Step: Early exits, in case anything suspicious is happening..
     //1.1: early exit in case of transitions..

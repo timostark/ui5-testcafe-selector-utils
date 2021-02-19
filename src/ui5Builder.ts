@@ -51,6 +51,7 @@ export class UI5AnyValueBuilder implements UI5StepBaseLib {
 
 export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI5BaseBuilderIntf {
     protected abstract getThisPointer(): B;
+    public abstract clone(): B;
     protected thisPointer: B;
 
     constructor(chain?: any) {
@@ -60,7 +61,7 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
         this._id = {};
 
         if (chain && chain instanceof UI5BaseBuilderIntf) {
-            this._id = (<any>chain)._id;
+            this._id = this._enhanceWith({}, (<any>chain)._id);
             this._name = (<any>chain)._name;
             this._domQuery = (<any>chain)._domQuery;
             this._hasTimeout = (<any>chain)._hasTimeout;
@@ -481,19 +482,21 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
 
     parent(parent: UI5ParentSelection): B {
         //take over all element names
-        let _idParent: any = (<any>parent)._id;
+        let _idParent: any = this._enhanceWith({}, (<any>parent)._id);
 
         this._sBasisObj = "parentAnyLevel";
         this._id = this._enhanceWith(this._id, _idParent);
+        this._sBasisObj = "";
         return this.thisPointer;
     }
 
     child(child: UI5ChildSelection): B {
         //take over all element names
-        let _idChild: any = (<any>child)._id;
+        let _idChild: any = this._enhanceWith({}, (<any>child)._id);
 
         this._sBasisObj = "atLeastOneChild";
         this._id = this._enhanceWith(this._id, _idChild);
+        this._sBasisObj = "";
         return this.thisPointer;
     }
 
@@ -609,15 +612,25 @@ export class UI5ParentSelection extends UI5ParentBuilder<UI5ParentSelection> {
     getThisPointer(): UI5ParentSelection {
         return this;
     }
+    clone(): UI5ParentSelection {
+        return new UI5ParentSelection(this);
+    }
 }
 
 export class UI5ChildSelection extends UI5ParentBuilder<UI5ChildSelection> {
     getThisPointer(): UI5ChildSelection {
         return this;
     }
+    clone(): UI5ChildSelection {
+        return new UI5ChildSelection(this);
+    }
 }
 
 export class UI5ChainSelection extends UI5BaseBuilder<UI5ChainSelection> {
+    clone(): UI5ChainSelection {
+        return new UI5ChainSelection(this);
+    }
+
     getThisPointer(): UI5ChainSelection {
         return this;
     }
@@ -632,6 +645,10 @@ export class UI5MessageToast extends UI5BaseBuilder<UI5MessageToast> {
 
     format(): string {
         return "Message-Toast" + (this._text.length ? ("with text " + this._text) : "");
+    }
+
+    clone(): UI5MessageToast {
+        return new UI5MessageToast(this);
     }
 
     withText(txt: string): UI5ChainSelection {
@@ -652,6 +669,10 @@ export class UI5CoreItemSelection extends UI5BaseBuilder<UI5CoreItemSelection> {
         return this;
     }
 
+    clone(): UI5CoreItemSelection {
+        return new UI5CoreItemSelection(this);
+    }
+
     key(key: string): UI5CoreItemSelection {
         return this.property("key", key);
     }
@@ -668,6 +689,10 @@ export class UI5SACWidgetChainSelection extends UI5BaseBuilder<UI5SACWidgetChain
 
     widgetTable(): UI5SACWidgetTableChainSelection {
         return new UI5SACWidgetTableChainSelection(this.element(["sap.fpa.ui.story.entity.dynamictable.DynamicTableWidget"]));
+    }
+
+    clone(): UI5SACWidgetChainSelection {
+        return new UI5SACWidgetChainSelection(this);
     }
 
     widgetType(widgetType: ui5SACWidgetType): UI5SACWidgetChainSelection {
@@ -781,6 +806,10 @@ export class UI5ComboBoxChainSelection extends UI5BaseBuilder<UI5ComboBoxChainSe
         return this.domChildWith("-arrow");
     }
 
+    clone(): UI5ComboBoxChainSelection {
+        return new UI5ComboBoxChainSelection(this);
+    }
+
     item(key: string): UI5CoreItemSelection {
         //merge own attributes and set as parent (to be improved)
         return ui5().parentId(this._id.identifier.id).coreItem().key(key);
@@ -790,6 +819,10 @@ export class UI5ComboBoxChainSelection extends UI5BaseBuilder<UI5ComboBoxChainSe
 export class UI5ListChainSelection extends UI5BaseBuilder<UI5ListChainSelection> {
     getThisPointer(): UI5ListChainSelection {
         return this;
+    }
+
+    clone(): UI5ListChainSelection {
+        return new UI5ListChainSelection(this);
     }
 }
 
@@ -801,6 +834,10 @@ export class UI5TableRowChainSelection extends UI5BaseBuilder<UI5TableRowChainSe
     col0(): UI5TableRowChainSelection {
         return <UI5TableRowChainSelection>this.domChildWith("-col0");
     }
+
+    clone(): UI5TableRowChainSelection {
+        return new UI5TableRowChainSelection(this);
+    }
 }
 
 export class UI5ObjectAttributeSelection extends UI5BaseBuilder<UI5ObjectAttributeSelection> {
@@ -810,6 +847,10 @@ export class UI5ObjectAttributeSelection extends UI5BaseBuilder<UI5ObjectAttribu
 
     inList(listId: string): UI5ObjectAttributeSelection {
         return this.parentId(listId);
+    }
+
+    clone(): UI5ObjectAttributeSelection {
+        return new UI5ObjectAttributeSelection(this);
     }
 
     withText(text: string): UI5ObjectAttributeSelection {

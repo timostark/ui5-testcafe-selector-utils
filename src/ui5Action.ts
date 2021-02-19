@@ -6,6 +6,9 @@ import { UI5BaseBuilder, UI5ChainSelection, UI5StepBaseLib } from "./ui5Builder"
 
 const rqTrack = require("testcafe/lib/api/test-run-tracker");
 
+const colorAssingmentPerTest: any = [
+    [37, 39], [34, 39], [36, 39], [90, 39], [36, 39]
+]
 
 enum ui5StepType {
     UNDEFINED = 0,
@@ -91,6 +94,8 @@ class ui5StepsDef {
     _startTime: number = 0;
     _errorLogs: ui5ActionErrorLogs = {};
 
+    static testIds: any = {};
+
     getCurrentTestName(t?: TestController): string {
         t = t ? t : ui5ActionDef.currentTestRun;
 
@@ -166,15 +171,28 @@ class ui5StepsDef {
         return this.getConsoleErrorLog(this.getCurrentTestName());
     }
 
+    private _getTestIdFromTestName(sCurTestName: string): number {
+        if (typeof ui5StepsDef.testIds[sCurTestName] === "undefined") {
+            ui5StepsDef.testIds[sCurTestName] = Object.keys(ui5StepsDef.testIds).length;
+            if (ui5StepsDef.testIds[sCurTestName] >= colorAssingmentPerTest.length) {
+                ui5StepsDef.testIds[sCurTestName] = 0; //reset to black if we have more than 5 tests...
+            }
+        }
+        return ui5StepsDef.testIds[sCurTestName];
+    }
+
     addStep(t: TestController, stepType: ui5StepType, status: ui5StepStatus, selector?: UI5StepBaseLib | Selector, activity?: string): ui5ActionStep {
         var sFormat = "";
         if (selector) {
             sFormat = selector instanceof UI5BaseBuilder ? selector.format() : "Selector";
         }
 
+
         var bUI5Selector = selector instanceof UI5BaseBuilder ? true : false;
         var bIsTraceSelector = selector instanceof UI5BaseBuilder && selector.isTraced() ? true : false;
         var sCurTestName = this.getCurrentTestName(t);
+        const curTestId = this._getTestIdFromTestName(sCurTestName);
+        const sCurTestWithColor = "\u001b[" + colorAssingmentPerTest[curTestId][0] + "m" + sCurTestName + "\u001b[" + colorAssingmentPerTest[curTestId][1] + "m";
         let step = new ui5ActionStep(this.getCurSteps(sCurTestName).length, stepType, status, sFormat, process.uptime(), sCurTestName, bUI5Selector, bIsTraceSelector, t, activity);
         if (this.getCurSteps(sCurTestName).filter(e => e.isUI5Selector === true).length === 0 && bUI5Selector === true) {
             step.isFirstUI5Selector = true;
@@ -186,8 +204,8 @@ class ui5StepsDef {
             selector.actionDescription(sStepDescr);
         }
 
-
-        let sText = "Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
+        //colorize the test
+        let sText = sCurTestWithColor + ", Step " + step.stepId + ": " + this.getStatusDescr(step.status) + " (action: " + this.getStepDescr(step.stepType);
         if (activity) {
             sText += ", " + activity;
         }
@@ -202,6 +220,10 @@ class ui5StepsDef {
         if (stat === ui5StepStatus.FAILED && this.hasFailedSteps(step.testName)) {
             stat = ui5StepStatus.FAILED_UNPROCESSED;
         }
+
+        const curTestId = this._getTestIdFromTestName(step.testName);
+        const sCurTestWithColor = "\u001b[" + colorAssingmentPerTest[curTestId][0] + "m" + step.testName + "\u001b[" + colorAssingmentPerTest[curTestId][1] + "m";
+
 
         let oLastTest = this.getCurSteps(step.testName).find(e => { return e.stepId === step.stepId - 1 });
         step.startTime = oLastTest ? oLastTest.endTime : step.startTime;
@@ -218,6 +240,7 @@ class ui5StepsDef {
         } else if (stat == ui5StepStatus.PROCESSED) {
             sText = "\u001b[32m" + sText + "\u001b[39m";
         }
+        sText = sCurTestWithColor + ", " + sText;
 
         console.log(sText);
     }
@@ -631,8 +654,8 @@ class ui5ActionDef implements ui5ActionDefIntf {
     }
 
     public selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise {
-        return this.click(selectorParent.comboBox().arrow()).
-            click(ui5().parent(selectorParent).itemdata("key", key));
+        return this.click(selectorParent.clone().comboBox().arrow()).
+            click(ui5().parent(selectorParent.clone()).itemdata("key", key));
     }
 
     public doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {

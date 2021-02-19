@@ -28,6 +28,7 @@ class CacheBufferDef {
     private cacheDataBuffer: CacheBufferDataEntries;
     //on purpose store per repo, so that we are not having any concurrency issues or similar
     private fileNameCache = `./node_modules/ui5-testcafe-selector-utils/cache_db.json`;
+    private folderCache = `./node_modules/ui5-testcafe-selector-utils/httpCache/`;
 
     constructor() {
         try {
@@ -74,7 +75,7 @@ class CacheBufferDef {
         const url = this._adjustUrl(urlReq);
         const fileNameHash = crypto.createHash('md5').update(url).digest("hex");
         const expires = new Date().getTime() + (maxAge * 100);
-        const fileName = `${process.env.APPDATA}/ui5-testcafe-selector-utils/tmp/buffer/` + fileNameHash;
+        const fileName = this.folderCache + fileNameHash;
         const fileNameHeader = fileName + "_h";
 
         fs.writeFileSync(fileName, data);
@@ -208,7 +209,7 @@ export let ui5CacheWriteMock = RequestMock()
         }
 
         //use in mem cache from chrome after second loading..
-        if (CacheBuffer.exists(req.url) && CacheBuffer.existsData(req.url) === false) {
+        if (CacheBuffer.exists(req.url)) {
             return true;
         }
 
@@ -264,8 +265,11 @@ export class ui5CacheWriteHookDef extends RequestHook {
         if (e.headers["set-cookie"]) {
             return;
         }
+        try {
+            CacheBuffer.writeFile(url, e.body, e.headers, cacheControl.maxAge);
+        } catch (err) {
 
-        CacheBuffer.writeFile(url, e.body, e.headers, cacheControl.maxAge);
+        }
     }
 }
 
