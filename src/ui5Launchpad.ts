@@ -1,25 +1,27 @@
-import { ui5 } from ".";
+import { t } from "testcafe";
+import { LoginUser, ui5, ui5TestData, UserRole, ui5Constants, SystemType } from ".";
 import { ui5Action } from "./ui5Action";
 import { ui5Config } from "./ui5Config";
 import { ui5Waiter } from "./ui5Waiter";
 
 export interface ui5LaunchpadStartupParams {
-    user: string,
-    password: string,
-    afterLogin?: () => Promise<any>,
+    role: UserRole;
+    testData?: string,
     tile?: string;
 }
 
 class ui5LaunchpadDef {
     async startup(params: ui5LaunchpadStartupParams) {
-        await this.login(params.user, params.password);
+        let user = this.getUser(params.role);
+
+        await this.login(user.user, user.pw);
 
         //wait for the launchpad to be loaded.. 
         await ui5Waiter.waitForLaunchpadToBeLoaded();
 
         //if wanted, wait for further actions..
-        if (params.afterLogin) {
-            await params.afterLogin();
+        if (params.testData) {
+            await ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
         }
 
         if (ui5Config.launchpad.deactivateAnimation === true) {
@@ -29,6 +31,10 @@ class ui5LaunchpadDef {
         if (params.tile) {
             await this.openTile(params.tile);
         }
+    }
+
+    private getUser(role: UserRole): LoginUser {
+        return ui5Constants.getUser(role, SystemType.FIORI);
     }
 
     async login(userName: string, password: string) {

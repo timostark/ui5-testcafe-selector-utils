@@ -2,6 +2,8 @@ import { t } from "testcafe";
 import { ui5Action } from "./ui5Action";
 import { ui5Assert } from "./ui5Asserts";
 import { ui5 } from "./ui5Builder";
+import { LoginUser, SystemType, ui5Constants, UserRole } from "./ui5Constants";
+import { ui5TestData } from "./ui5TestData";
 import { ui5Waiter } from "./ui5Waiter";
 
 export interface ui5LumiraParameters {
@@ -10,18 +12,19 @@ export interface ui5LumiraParameters {
 };
 
 export interface ui5LumiraStartupParameters {
-    user: string,
-    password: string,
-    afterLogin?: () => Promise<any>,
+    testData?: string,
+    role: UserRole;
     parameter?: ui5LumiraParameters[]
 }
 
 class ui5LumiraDef {
     public async startup(params: ui5LumiraStartupParameters) {
-        await this.login(params.user, params.password);
+        let user = this.getUser(params.role);
 
-        if (params.afterLogin) {
-            await params.afterLogin();
+        await this.login(user.user, user.pw);
+
+        if (params.testData) {
+            await ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
         }
 
         if (params.parameter) {
@@ -32,6 +35,10 @@ class ui5LumiraDef {
         } else {
             await ui5Waiter.waitForBOToBeLoaded();
         }
+    }
+
+    getUser(role: UserRole): LoginUser {
+        return ui5Constants.getUser(role, SystemType.FIORI);
     }
 
     private async login(user: string, pw: string) {
