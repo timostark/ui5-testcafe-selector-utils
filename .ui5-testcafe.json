@@ -15,6 +15,21 @@
             "type": "boolean",
             "default": false
         },
+        "testDataUrl": {
+            "description": "Allows you to specify a URL to generate and delete test data from the system",
+            "type": "string",
+            "default": ""
+        },
+        "testDataDelFunction": {
+            "description": "Allows you to specify a Function Import to be called inside the test data service to delete test data",
+            "type": "string",
+            "default": ""
+        },
+        "testDataCreateFunction": {
+            "description": "Allows you to specify a Function Import to be called inside the test data service to create test data",
+            "type": "string",
+            "default": ""
+        },
         "traceSelectorOnFailure": {
             "description": "In case of any failed test step the selector (which was present last) will be traced",
             "type": "boolean",

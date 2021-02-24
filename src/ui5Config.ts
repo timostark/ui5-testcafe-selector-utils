@@ -28,6 +28,9 @@ export interface ui5Configuration {
     coverage: ui5CoverageConfiguration;
     rest?: ui5RestConfiguration;
     launchpad?: ui5LaunchpadConfiguration;
+    testDataUrl: string,
+    testDataDelFunction: string,
+    testDataCreateFunction: string,
     firstSelectorTimeout: number;
     traceSelectorOnFailure: boolean;
     tileOpeningTimeout: number;
@@ -60,6 +63,9 @@ class ui5ConfigDef {
                 },
                 firstSelectorTimeout: 60000,
                 tileOpeningTimeout: 60000,
+                testDataUrl: '',
+                testDataDelFunction: '',
+                testDataCreateFunction: '',
 
                 traceSelectorOnFailure: false,
                 cacheResources: false,
@@ -75,6 +81,9 @@ class ui5ConfigDef {
         }
         if (typeof this._config.coverage.basePath === "undefined") {
             this._config.coverage.basePath = "";
+        }
+        if (typeof this._config.testDataUrl === "undefined") {
+            this._config.testDataUrl = "";
         }
         if (typeof this._config.coverage.proxy === "undefined") {
             this._config.coverage.proxy = false;
@@ -106,6 +115,17 @@ class ui5ConfigDef {
 
     get traceSelectorOnFailure(): boolean {
         return this._config.traceSelectorOnFailure;
+    }
+
+
+    get testDataUrl(): string {
+        return this._config.testDataUrl;
+    }
+    get testDataDelFunction(): string {
+        return this._config.testDataDelFunction;
+    }
+    get testDataCreateFunction(): string {
+        return this._config.testDataCreateFunction;
     }
 
     get timeoutIncreaseFactor(): number {

@@ -4,10 +4,8 @@ import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResultOvervie
 import { ui5Config } from "./ui5Config";
 import { ui5Coverage } from "./ui5Coverage";
 import { ui5CacheRequestHooks } from "./ui5Cache";
-import { start } from "repl";
 import { ui5Lumira } from "./ui5Lumira";
 import { ui5TestData } from "./ui5TestData";
-import { LoginUser, ui5Constants } from "./ui5Constants";
 
 export interface ui5FixtureProperties {
     disableCoverage: boolean

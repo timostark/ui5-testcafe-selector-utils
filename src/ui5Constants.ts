@@ -1,23 +1,5 @@
 import { ui5Password } from ".";
 
-class PBKTestDataSets {
-    public static readonly BKMFA = {
-        PLANT9991_WITH_STRUCTURE: 'PLANT9991_WITH_STRUCTURE',
-        NEW_PLANT_WITHOUT_STRUCTURE: 'NEW_PLANT_WITHOUT_STRUCTURE',
-        BKMFA_POWERTRAIN: 'BKMFA_POWERTRAIN',
-        BKMFA_KMS_NEW_PLANT: 'BKMFA_KMS_NEW_PLANT',
-        BKMFA_CREATE_CA: ' BKMFA_CREATE_CA'
-    };
-}
-
-class PBKRole {
-    public static readonly BKMFA = {
-        KMS_ZENTRAL: 'kmsZentral',
-        KMS_ZENTRAL2: 'kmsZentral2',
-        KMS_PT_ZENTRAL: 'kmsPTZentral'
-    };
-}
-
 type TestDataSet = string;
 type UserRole = string;
 
@@ -85,4 +67,4 @@ class ConstantReader {
 
 var ui5Constants = new ConstantReader();
 
-export { Products, TestDataSet, ui5Constants, LoginUser, SystemType, UserRole, PBKTestDataSets, PBKRole };
+export { Products, TestDataSet, ui5Constants, LoginUser, SystemType, UserRole };

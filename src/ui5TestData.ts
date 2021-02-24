@@ -1,5 +1,6 @@
-import { LoginUser, PBKRole, SystemType, ui5Constants, UserRole } from "./ui5Constants";
+import { LoginUser, SystemType, ui5Constants, UserRole } from "./ui5Constants";
 import { request } from 'https';
+import { ui5Config } from "./ui5Config";
 var setCookie = require('set-cookie-parser');
 
 interface cookieAndAuth {
@@ -30,7 +31,7 @@ class ui5TestDataDef {
 
             const options = {
                 hostname: ui5Constants.getHost(SystemType.FIORI),
-                path: "/sap/opu/odata/PBK/TRU_TEST_DATA_SRV/" + ui5Constants.getURLOption(SystemType.FIORI),
+                path: ui5Config.testDataUrl + ui5Constants.getURLOption(SystemType.FIORI),
                 port: ui5Constants.getPort(SystemType.FIORI),
                 rejectUnauthorized: false,
                 headers: {
@@ -68,7 +69,7 @@ class ui5TestDataDef {
             const options = {
                 hostname: ui5Constants.getHost(SystemType.FIORI),
                 port: ui5Constants.getPort(SystemType.FIORI),
-                path: "/sap/opu/odata/PBK/TRU_TEST_DATA_SRV/xPBKxCDS_TRU_I_TC_HEAD_TPDel_from_sys?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
+                path: ui5Config.testDataUrl + ui5Config.testDataDelFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
                 headers: {
                     "x-csrf-token": incoHeader.xcsrf,
                     "Cookie": incoHeader.cookies,
@@ -99,7 +100,7 @@ class ui5TestDataDef {
             const options = {
                 hostname: ui5Constants.getHost(SystemType.FIORI),
                 port: ui5Constants.getPort(SystemType.FIORI),
-                path: "/sap/opu/odata/PBK/TRU_TEST_DATA_SRV/xPBKxCDS_TRU_I_TC_HEAD_TPLoad_into_sys?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
+                path: ui5Config.testDataUrl + ui5Config.testDataCreateFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
                 headers: {
                     "x-csrf-token": incoHeader.xcsrf,
                     "Cookie": incoHeader.cookies,
