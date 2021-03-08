@@ -3,14 +3,6 @@ import { ui5Password } from ".";
 type TestDataSet = string;
 type UserRole = string;
 
-enum Products {
-    BKML = "BKML",
-    BKMFA = "BKMFA",
-    BCAP = "BCAP",
-    PRP = "PRP",
-    BP = "BP"
-}
-
 enum Enviroment {
     DEV = "DEV",
     INT = "INT",
@@ -67,4 +59,4 @@ class ConstantReader {
 
 var ui5Constants = new ConstantReader();
 
-export { Products, TestDataSet, ui5Constants, LoginUser, SystemType, UserRole };
+export { TestDataSet, ui5Constants, LoginUser, SystemType, UserRole };
