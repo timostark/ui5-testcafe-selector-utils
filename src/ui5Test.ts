@@ -6,6 +6,7 @@ import { ui5Coverage } from "./ui5Coverage";
 import { ui5CacheRequestHooks } from "./ui5Cache";
 import { ui5Lumira } from "./ui5Lumira";
 import { ui5TestData } from "./ui5TestData";
+import { start } from "repl";
 
 export interface ui5FixtureProperties {
     disableCoverage: boolean
@@ -41,34 +42,57 @@ interface BOParameter {
     value: string
 };
 
-export interface ui5StartParams {
+export interface ui5BOLaunchpadParams {
     description: string,
     testCase: string,
     role: UserRole,
     testData?: string,
-    isLaunchpad(): boolean;
-};
-
-export interface ui5BOLaunchpadParams extends ui5StartParams {
     parameter?: BOParameter[];
-    isLaunchpad: () => false;
 };
 
-export interface ui5LaunchpadStartupParams extends ui5StartParams {
+export interface ui5LaunchpadStartupParams {
+    description: string,
+    testCase: string,
+    role: UserRole,
+    testData?: string,
     tile?: string;
-    isLaunchpad: () => true;
 }
 
+interface ui5MergedParams {
+    description: string,
+    testCase: string,
+    role: UserRole,
+    testData?: string,
+    parameter?: BOParameter[];
+    tile?: string;
+    isLaunchpad: boolean;
+}
 
 export function lumiraTest(startup: ui5BOLaunchpadParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
-    return ui5TestInternal(startup, func);
+    let params: ui5MergedParams = {
+        description: startup.description,
+        testCase: startup.testCase,
+        testData: startup.testData,
+        role: startup.role,
+        isLaunchpad: false,
+        parameter: startup.parameter
+    };
+    return ui5TestInternal(params, func);
 };
 
 export function ui5Test(startup: ui5LaunchpadStartupParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
-    return ui5TestInternal(startup, func);
+    let params: ui5MergedParams = {
+        description: startup.description,
+        testCase: startup.testCase,
+        testData: startup.testData,
+        role: startup.role,
+        isLaunchpad: true,
+        tile: startup.tile
+    };
+    return ui5TestInternal(params, func);
 };
 
-function ui5TestInternal(startup: ui5BOLaunchpadParams | ui5LaunchpadStartupParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
+function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
     return test.clientScripts({ path: __dirname + "/clientScripts/client.js" }).after(async t => {
         const { error } = await t.getBrowserConsoleMessages();
         const coverage = await ClientFunction((): any => { return window[<any>"__coverage__"]; })();
@@ -118,19 +142,17 @@ function ui5TestInternal(startup: ui5BOLaunchpadParams | ui5LaunchpadStartupPara
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
         console.log("\u001b[1m" + startup.testCase + " : '" + startup.description + "' started after " + sTime + "s\u001b[22m");
 
-        if (startup.isLaunchpad() === true) {
-            let launchpadStartup: ui5LaunchpadStartupParams = <ui5LaunchpadStartupParams>startup;
+        if (startup.isLaunchpad === true) {
             await ui5Launchpad.startup({
                 role: startup.role,
                 testData: startup.testData,
-                tile: launchpadStartup.tile
+                tile: startup.tile
             });
         } else {
-            let boStartup: ui5BOLaunchpadParams = <ui5BOLaunchpadParams>startup;
             await ui5Lumira.startup({
                 role: startup.role,
                 testData: startup.testData,
-                parameter: boStartup.parameter,
+                parameter: startup.parameter,
             })
         }
         await func(ui5ActionsDefForRun, t);
