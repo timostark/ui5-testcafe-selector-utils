@@ -171,7 +171,7 @@ class ui5StepsDef {
         return this.getConsoleErrorLog(this.getCurrentTestName());
     }
 
-    private _getTestIdFromTestName(sCurTestName: string): number {
+    getTestIdFromTestName(sCurTestName: string): number {
         if (typeof ui5StepsDef.testIds[sCurTestName] === "undefined") {
             ui5StepsDef.testIds[sCurTestName] = Object.keys(ui5StepsDef.testIds).length;
             if (ui5StepsDef.testIds[sCurTestName] >= colorAssingmentPerTest.length) {
@@ -191,7 +191,7 @@ class ui5StepsDef {
         var bUI5Selector = selector instanceof UI5BaseBuilder ? true : false;
         var bIsTraceSelector = selector instanceof UI5BaseBuilder && selector.isTraced() ? true : false;
         var sCurTestName = this.getCurrentTestName(t);
-        const curTestId = this._getTestIdFromTestName(sCurTestName);
+        const curTestId = this.getTestIdFromTestName(sCurTestName);
         const sCurTestWithColor = "\u001b[" + colorAssingmentPerTest[curTestId][0] + "m" + sCurTestName + "\u001b[" + colorAssingmentPerTest[curTestId][1] + "m";
         let step = new ui5ActionStep(this.getCurSteps(sCurTestName).length, stepType, status, sFormat, process.uptime(), sCurTestName, bUI5Selector, bIsTraceSelector, t, activity);
         if (this.getCurSteps(sCurTestName).filter(e => e.isUI5Selector === true).length === 0 && bUI5Selector === true) {
@@ -221,7 +221,7 @@ class ui5StepsDef {
             stat = ui5StepStatus.FAILED_UNPROCESSED;
         }
 
-        const curTestId = this._getTestIdFromTestName(step.testName);
+        const curTestId = this.getTestIdFromTestName(step.testName);
         const sCurTestWithColor = "\u001b[" + colorAssingmentPerTest[curTestId][0] + "m" + step.testName + "\u001b[" + colorAssingmentPerTest[curTestId][1] + "m";
 
 
@@ -326,6 +326,7 @@ interface ui5ActionDefIntf {
     debugSelector(selector?: UI5ChainSelection): Promise<void>;
     traceSelector(selector: UI5ChainSelection, traceOptions?: ui5TraceOptions): Promise<void>;
     pressKey(keys: string, options?: ActionOptions): ui5ActionDefPromise;
+    getTestId() : string,
     blur(): ui5ActionDefPromise;
     runSupportAssistant(): Promise<ui5SupportAssistantIssue[]>;
     deactivateAnimation(): Promise<any>;
@@ -390,6 +391,10 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
     public debug(): ui5ActionDefPromise {
         return this.getRunDef().debug();
     }
+    public getTestId(): string {
+        return this.getRunDef().getTestId();
+    }
+    
     public blur(): ui5ActionDefPromise {
         return this.getRunDef().blur();
     }
@@ -809,7 +814,6 @@ class ui5ActionDef implements ui5ActionDefIntf {
         });
         return <any>oProm;
     }
-
 
     private _delegateAPIToPromise(_handler: any, dest: any) {
         ["click", "typeText", "clearText", "traceSelector", "expectExists", "expectCount", "expectVisible", "expectProperty", "expectAny", "expect", "deactivateAnimation", "selectElement", "traceSelector", "doubleClick", "rightClick", "hover", "drag", "dragToElement", "selectText", "takeElementScreenshot", "pressKey", "blur", "selectElement"].forEach((srcProp) => {

@@ -1,6 +1,6 @@
 {
   "name": "ui5-testcafe-selector-utils",
-  "version": "0.0.280",
+  "version": "0.0.282",
   "description": "Test-Cafe selector Utils",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,8 @@
   "dependencies": {
     "istanbul-lib-coverage": "^3.0.0",
     "istanbul-lib-instrument": "^4.0.3",
-    "url-parse": "^1.4.7"
+    "url-parse": "^1.4.7",
+    "typescript": "*"
   },
   "devDependencies": {
     "@types/node": "^14.14.6",
