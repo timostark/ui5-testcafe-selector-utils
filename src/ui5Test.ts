@@ -1,5 +1,5 @@
 import { ClientFunction } from "testcafe";
-import { Products, ui5Launchpad, ui5Proxy, ui5TraceOptions, UserRole } from ".";
+import { ui5Launchpad, ui5Proxy, ui5TraceOptions, UserRole } from ".";
 import { ui5ActionDef, ui5ActionDefIntf, ui5Steps, ui5TraceSelectorResultOverview } from "./ui5Action"
 import { ui5Config } from "./ui5Config";
 import { ui5Coverage } from "./ui5Coverage";
@@ -12,7 +12,7 @@ export interface ui5FixtureProperties {
     disableCoverage: boolean
 };
 
-export function ui5Fixture(name: string, url: string, category?: Products, additionalProperties?: ui5FixtureProperties): FixtureFn {
+export function ui5Fixture(name: string, url: string, category?: string, additionalProperties?: ui5FixtureProperties): FixtureFn {
     var urlUse = url;
 
     if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
