@@ -658,6 +658,11 @@ class ui5ActionDef implements ui5ActionDefIntf {
         return <any>oProm;
     }
 
+    public selectElementByIndex(selectorParent: UI5ChainSelection, iIndex: number): ui5ActionDefPromise {
+        return this.click(selectorParent.clone().comboBox().arrow()).
+            click(ui5().parent(selectorParent.clone()).insideATable(iIndex));
+    }
+
     public selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise {
         return this.click(selectorParent.clone().comboBox().arrow()).
             click(ui5().parent(selectorParent.clone()).itemdata("text", text));
