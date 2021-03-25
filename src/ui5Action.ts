@@ -337,6 +337,9 @@ interface ui5ActionDefIntf {
     hover(selector: UI5ChainSelection | Selector, options?: MouseActionOptions): ui5ActionDefPromise;
     doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise;
     selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise;
+    selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise;
+    selectElementByIndex(selectorParent: UI5ChainSelection, index: number): ui5ActionDefPromise;
+
     typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise;
     clearText(selector: UI5ChainSelection | Selector): ui5ActionDefPromise;
     expect(selector: UI5ChainSelection | any): ui5AssertDef;
@@ -418,6 +421,12 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
     }
     public selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise {
         return this.getRunDef().selectElement(selectorParent, key);
+    }
+    public selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise {
+        return this.getRunDef().selectElementByText(selectorParent, text);
+    }
+    public selectElementByIndex(selectorParent: UI5ChainSelection, index: number): ui5ActionDefPromise {
+        return this.getRunDef().selectElementByIndex(selectorParent, index);
     }
     public typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
         return this.getRunDef().typeText(selector, text, options);
