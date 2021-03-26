@@ -2000,8 +2000,13 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
                                     oReturn.tableSettings.tableCol = iVisibleColCounter;
                                     if (aCol && aCol.length && aCol.length > x) {
                                         oReturn.tableSettings.tableColId = this._getUi5Id(aCol[x]);
-                                        oReturn.tableSettings.tableColDescr = aCol[x].getLabel ? aCol[x].getLabel().getText() : "";
+                                        if ( aCol[x].getLabel && aCol[x].getLabel() && aCol[x].getLabel().getText ) {
+                                            oReturn.tableSettings.tableColDescr = aCol[x].getLabel().getText();
+                                        } else {
+                                            oReturn.tableSettings.tableColDescr = "";
+                                        }
                                     }
+
                                     break;
                                 }
                                 iColCounter = iColCounter + 1;
