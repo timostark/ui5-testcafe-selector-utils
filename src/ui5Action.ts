@@ -648,6 +648,12 @@ class ui5ActionDef implements ui5ActionDefIntf {
     }
 
     public typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
+        if ( typeof options === "undefined" ) {
+            options = { replace: true };
+        } else if ( typeof options.replace === "undefined" ) {
+            options.replace = true;
+        }
+        
         let oAction = ui5Steps.addStep(this.t, ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
         let oProm = this.t.typeText(this._getSelector(selector, oAction), text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
