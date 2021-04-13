@@ -795,7 +795,7 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
         }
 
         if (typeof id.metadata.interactable.nonZeroSize !== "undefined") {
-            var bNonZeroWidth = _wnd.$(oItem.getDomRef()).width() > 0 && _wnd.$(oItem.getDomRef()).height() > 0.
+            var bNonZeroWidth = _wnd.$(oItem.getDomRef()).outerWidth() > 0 && _wnd.$(oItem.getDomRef()).outerHeight() > 0.
             if (bNonZeroWidth !== id.metadata.interactable.nonZeroSize) {
                 this._logWrongValue("metadata.interactable.nonZeroSize", id.metadata.interactable.nonZeroSize, bNonZeroWidth);
                 return false;
@@ -1826,7 +1826,7 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
         oReturn.metadata.interactable.blocked = true;
     }
 
-    oReturn.metadata.interactable.nonZeroSize = oItem.getDomRef() ? (_wnd.$(oItem.getDomRef()).width() > 0 && _wnd.$(oItem.getDomRef()).height() > 0) : false;
+    oReturn.metadata.interactable.nonZeroSize = oItem.getDomRef() ? (_wnd.$(oItem.getDomRef()).outerWidth() > 0 && _wnd.$(oItem.getDomRef()).outerHeight() > 0) : false;
     oReturn.metadata.interactable.interactable = false;
     if (oReturn.metadata.interactable.busy === false &&
         oReturn.metadata.interactable.needsRerendering === false &&
