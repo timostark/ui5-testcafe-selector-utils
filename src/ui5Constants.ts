@@ -53,8 +53,8 @@ class ConstantReader {
     }
 
     getUser(role: UserRole, sys: SystemType): LoginUser {
-        if ( env.TESTCAFE_LOCAL_USER && env.TESTCAFE_LOCAL_PASSWORD ) {
-            return new LoginUser(env.TESTCAFE_LOCAL_USER, env.TESTCAFE_LOCAL_PASSWORD);
+        if ( process.env.TESTCAFE_LOCAL_USER && process.env.TESTCAFE_LOCAL_PASSWORD ) {
+            return new LoginUser(process.env.TESTCAFE_LOCAL_USER, process.env.TESTCAFE_LOCAL_PASSWORD);
         }
         
         let oUser = this._config["users"][role][this._enviroment][sys];
