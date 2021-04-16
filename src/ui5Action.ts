@@ -95,6 +95,7 @@ class ui5StepsDef {
     _errorLogs: ui5ActionErrorLogs = {};
 
     static testIds: any = {};
+    static testIdErrorLog: any = {};
 
     getCurrentTestName(t?: TestController): string {
         t = t ? t : ui5ActionDef.currentTestRun;
@@ -152,6 +153,14 @@ class ui5StepsDef {
             default:
                 return "";
         }
+    }
+
+    getTestIdErrorLog(sTestId: string) {
+        return ui5StepsDef.testIdErrorLog[sTestId];
+    }
+
+    setTestIdErrorLog(sTestId: string, errorLog: any) {
+        ui5StepsDef.testIdErrorLog[sTestId] = errorLog;
     }
 
     getSteps(sTestId: string, sFixtureName: string): ui5ActionStep[] {

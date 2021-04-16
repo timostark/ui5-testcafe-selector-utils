@@ -35,6 +35,7 @@ export interface ui5Configuration {
     traceSelectorOnFailure: boolean;
     tileOpeningTimeout: number;
     cacheResources: boolean;
+    logSelectorOnFailure: boolean;
     clearCache: boolean;
 };
 
@@ -67,6 +68,7 @@ class ui5ConfigDef {
                 testDataDelFunction: '',
                 testDataCreateFunction: '',
 
+                logSelectorOnFailure: false,
                 traceSelectorOnFailure: false,
                 cacheResources: false,
                 clearCache: false
@@ -108,6 +110,8 @@ class ui5ConfigDef {
         if (this._config.coverage.enabled === false) {
             this._config.coverage.timeoutIncreaseFactor = 1;
         }
+        
+        this._config.logSelectorOnFailure = typeof this._config.logSelectorOnFailure === "undefined" ? false : this._config.logSelectorOnFailure;
         this._config.traceSelectorOnFailure = typeof this._config.traceSelectorOnFailure === "undefined" ? false : this._config.traceSelectorOnFailure;
         this._config.clearCache = typeof this._config.clearCache === "undefined" ? false : this._config.clearCache;
         this._config.cacheResources = typeof this._config.cacheResources === "undefined" ? false : this._config.cacheResources;
@@ -117,6 +121,9 @@ class ui5ConfigDef {
         return this._config.traceSelectorOnFailure;
     }
 
+    get logSelectorOnFailure() : boolean {
+        return this._config.logSelectorOnFailure;
+    }
 
     get testDataUrl(): string {
         return this._config.testDataUrl;

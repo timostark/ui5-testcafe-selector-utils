@@ -111,8 +111,8 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
         if (startup.testData) {
             await ui5TestData.deleteTestData(startup.role, startup.testCase, startup.testData);
         }
-
-        if (ui5Config.traceSelectorOnFailure) {
+        
+        if (ui5Config.traceSelectorOnFailure || ui5Config.logSelectorOnFailure) {
             if (ui5Steps.hasFailedSteps(ui5Steps.getCurrentTestName(t))) {
                 const fnGetLog = ClientFunction((traceOptions?: ui5TraceOptions): ui5TraceSelectorResultOverview => {
                     //@ts-ignore
@@ -124,13 +124,18 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
                 for (var i = 0; i < log.found.length; i++) {
                     consLength[log.found[i].id] = true;
                 }
-                console.log("\u001b[1mFound items:" + Object.keys(consLength).length + "\u001b[22m");
-                if (log.found.length > 0) {
-                    console.table(log.found, ["id", "target", "property", "expected", "actual"])
-                }
 
-                console.log("\u001b[1mNot-Found items:" + Object.keys(log.notFound).length + "\u001b[22m");
-                console.table(log.notFound, ["target", "property", "expected", "actual"]);
+                ui5Steps.setTestIdErrorLog(ui5Steps.getCurrentTestName(t), log);
+
+                if(ui5Config.traceSelectorOnFailure) {
+                    console.log("\u001b[1mFound items:" + Object.keys(consLength).length + "\u001b[22m");
+                    if (log.found.length > 0) {
+                        console.table(log.found, ["id", "target", "property", "expected", "actual"])
+                    }
+
+                    console.log("\u001b[1mNot-Found items:" + Object.keys(log.notFound).length + "\u001b[22m");
+                    console.table(log.notFound, ["target", "property", "expected", "actual"]);
+                }
             }
         }
     }).meta('TEST_CASE', startup.testCase).requestHooks(ui5CacheRequestHooks())(startup.description, async t => {
