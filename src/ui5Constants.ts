@@ -1,3 +1,4 @@
+import { env } from "process";
 import { ui5Password } from ".";
 
 type TestDataSet = string;
@@ -52,6 +53,10 @@ class ConstantReader {
     }
 
     getUser(role: UserRole, sys: SystemType): LoginUser {
+        if ( env.TESTCAFE_LOCAL_USER && env.TESTCAFE_LOCAL_PASSWORD ) {
+            return new LoginUser(env.TESTCAFE_LOCAL_USER, env.TESTCAFE_LOCAL_PASSWORD);
+        }
+        
         let oUser = this._config["users"][role][this._enviroment][sys];
         return new LoginUser(oUser.userId, ui5Password.decrypt(oUser.password));
     }
