@@ -159,8 +159,15 @@ class ui5StepsDef {
         return ui5StepsDef.testIdErrorLog[sTestId];
     }
 
-    setTestIdErrorLog(sTestId: string, errorLog: any) {
-        ui5StepsDef.testIdErrorLog[sTestId] = errorLog;
+    setTestIdErrorLog(sTestId: string, errorLog: ui5TraceSelectorResultOverview) {
+        var oErrorLog = {
+            found: errorLog.found,
+            notFound: <any[]>[]
+        };
+        for ( var s in errorLog.notFound) {
+            oErrorLog.notFound.push(errorLog.notFound[s]);
+        }
+        ui5StepsDef.testIdErrorLog[sTestId] = oErrorLog;
     }
 
     getSteps(sTestId: string, sFixtureName: string): ui5ActionStep[] {
@@ -658,9 +665,13 @@ class ui5ActionDef implements ui5ActionDefIntf {
 
     public typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise {
         if ( typeof options === "undefined" ) {
-            options = { replace: true };
-        } else if ( typeof options.replace === "undefined" ) {
+            options = { replace: true, confirm: true };
+        }
+        if ( typeof options.replace === "undefined" ) {
             options.replace = true;
+        }
+        if ( typeof options.confirm === "undefined" ) {
+            options.confirm = true;
         }
         
         let oAction = ui5Steps.addStep(this.t, ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
