@@ -240,6 +240,16 @@ ui5TestCafeSelectorDef.prototype._getItemForItem = function (oItem) {
         }
         iIndex += 1;
         let sElementName = oPrt.getMetadata().getElementName();
+        
+        if ( sElementName === "sap.m.SegmentedButton" ) {
+            var oButtonItem = oPrt.getItems().find(function (oBtnItm) {
+                return oBtnItm.oButton.getId() === oItem.getId();
+            });
+            if(oButtonItem) {
+                return oButtonItem;
+            }
+        }
+
         if (oPrt && (sElementName === "sap.m.MultiComboBox" || sElementName === "sap.m.ComboBox")) {
             if (oPrt._getItemByListItem) {
                 return oPrt._getItemByListItem(oItem);
