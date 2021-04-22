@@ -8,6 +8,8 @@ import { ui5Lumira } from "./ui5Lumira";
 import { ui5TestData } from "./ui5TestData";
 import { start } from "repl";
 
+process.setMaxListeners(0);
+
 export interface ui5FixtureProperties {
     disableCoverage: boolean
 };
