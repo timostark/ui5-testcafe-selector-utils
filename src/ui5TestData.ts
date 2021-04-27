@@ -51,6 +51,7 @@ class ui5TestDataDef {
                 let sCookie = aCookies.join(";");
 
                 resolve({ cookies: sCookie, xcsrf: <string>res.headers["x-csrf-token"] });
+                console.log("Test-Data-Container x-csrf-token loaded");
             });
 
 
@@ -69,7 +70,7 @@ class ui5TestDataDef {
             const options = {
                 hostname: ui5Constants.getHost(SystemType.FIORI),
                 port: ui5Constants.getPort(SystemType.FIORI),
-                path: ui5Config.testDataUrl + ui5Config.testDataDelFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
+                path: ui5Config.testDataUrl + ui5Config.testDataDelFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'",// + ui5Constants.getURLOption(SystemType.FIORI),
                 headers: {
                     "x-csrf-token": incoHeader.xcsrf,
                     "Cookie": incoHeader.cookies,
@@ -81,6 +82,7 @@ class ui5TestDataDef {
 
             const req = request(options, res => {
                 res.on("data", data => {
+                    console.log("Test-Data-Container " + testCase + " unloadd");
                     resolve(data);
                 });
             });
@@ -100,7 +102,7 @@ class ui5TestDataDef {
             const options = {
                 hostname: ui5Constants.getHost(SystemType.FIORI),
                 port: ui5Constants.getPort(SystemType.FIORI),
-                path: ui5Config.testDataUrl + ui5Config.testDataCreateFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'" + ui5Constants.getURLOption(SystemType.FIORI),
+                path: ui5Config.testDataUrl + ui5Config.testDataCreateFunction + "?TestSetId='" + testCase + "'&test_case_id='" + testData + "'", // + ui5Constants.getURLOption(SystemType.FIORI),
                 headers: {
                     "x-csrf-token": incoHeader.xcsrf,
                     "Cookie": incoHeader.cookies,
@@ -112,6 +114,7 @@ class ui5TestDataDef {
 
             const req = request(options, res => {
                 res.on("data", data => {
+                    console.log("Test-Data-Container " + testCase + " loaded");
                     resolve(data);
                 });
             });

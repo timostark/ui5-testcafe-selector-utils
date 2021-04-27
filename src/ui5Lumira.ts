@@ -21,11 +21,12 @@ class ui5LumiraDef {
     public async startup(params: ui5LumiraStartupParameters) {
         let user = this.getUser(params.role);
 
-        await this.login(user.user, user.pw);
-
+        //difference to launchpad: we simply can't load in paralell - data must be there before we do anything on lumira!
         if (params.testData) {
             await ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
         }
+
+        await this.login(user.user, user.pw);
 
         if (params.parameter) {
             for (let i = 0; i < params.parameter.length; i++) {
@@ -38,7 +39,7 @@ class ui5LumiraDef {
     }
 
     getUser(role: UserRole): LoginUser {
-        return ui5Constants.getUser(role, SystemType.FIORI);
+        return ui5Constants.getUser(role, SystemType.BO);
     }
 
     private async login(user: string, pw: string) {

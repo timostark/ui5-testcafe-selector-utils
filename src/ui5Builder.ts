@@ -250,9 +250,41 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
         return this.thisPointer;
     }
 
-    positionInParent(position: number): B {
+    positionInAggregation(position: number): B {
         this._id = this._enhanceWith(this._id, {
-            positionInParent: position
+            metadata: {
+                positionInAggregation: position
+            }
+        });
+
+        return this.thisPointer;
+    }
+    
+    parentAggregation(name: string): B {
+        this._id = this._enhanceWith(this._id, {
+            metadata: {
+                parentAggregation: name
+            }
+        });
+
+        return this.thisPointer;
+    }
+    
+    textBundle(name: string): B {
+        this._id = this._enhanceWith(this._id, {
+            metadata: {
+                textBundle: name
+            }
+        });
+
+        return this.thisPointer;
+    }
+
+    tooltipBundle(name: string): B {
+        this._id = this._enhanceWith(this._id, {
+            metadata: {
+                tooltipBundle: name
+            }
         });
 
         return this.thisPointer;

@@ -14,15 +14,21 @@ class ui5LaunchpadDef {
     async startup(params: ui5LaunchpadStartupParams) {
         let user = this.getUser(params.role);
 
+        //if wanted, wait for further actions..
+        let testDataPromise = null;
+        if (params.testData) {
+            testDataPromise = ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
+        }
+
         await this.login(user.user, user.pw);
 
         //wait for the launchpad to be loaded.. 
         await ui5Waiter.waitForLaunchpadToBeLoaded();
-
-        //if wanted, wait for further actions..
-        if (params.testData) {
-            await ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
+        
+        if(testDataPromise) {
+            await testDataPromise;
         }
+
 
         if (ui5Config.launchpad.deactivateAnimation === true) {
             await ui5Action.deactivateAnimation();

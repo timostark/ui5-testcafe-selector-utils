@@ -1,4 +1,3 @@
-
 let _wnd = window;
 let iFrames = document.getElementsByTagName("iframe");
 for (let i = 0; i < iFrames.length; i++) {
@@ -30,6 +29,7 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
         return [];
     }
 
+    this.getAllMessageBundleTexts();
     this._allElements = this._getAllElements();
     this._ui5LastSelectorDef = id;
     this._oDomFieldMapBy = {};
@@ -240,12 +240,12 @@ ui5TestCafeSelectorDef.prototype._getItemForItem = function (oItem) {
         }
         iIndex += 1;
         let sElementName = oPrt.getMetadata().getElementName();
-        
-        if ( sElementName === "sap.m.SegmentedButton" ) {
+
+        if (sElementName === "sap.m.SegmentedButton") {
             var oButtonItem = oPrt.getItems().find(function (oBtnItm) {
                 return oBtnItm.oButton.getId() === oItem.getId();
             });
-            if(oButtonItem) {
+            if (oButtonItem) {
                 return oButtonItem;
             }
         }
@@ -664,7 +664,9 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
         }
         if (id.identifier.id) {
             if (id.identifier.id !== sUi5Id && id.identifier.id !== sUi5LocalId && id.identifier.id !== sLumiraId) {
-                var sIdMap = [sUi5Id, sUi5LocalId, sLumiraId].filter(function (e) { return typeof e !== "undefined" }).join(",");
+                var sIdMap = [sUi5Id, sUi5LocalId, sLumiraId].filter(function (e) {
+                    return typeof e !== "undefined"
+                }).join(",");
                 this._logWrongValue("identifier.id", id.identifier.id, sIdMap);
                 return false;
             }
@@ -720,6 +722,51 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
             }
 
             this._logCorrectValue("metadata.componentName", id.metadata.componentName, sComp);
+        }
+
+
+        if (typeof id.metadata.textBundle !== "undefined") {
+            if (!oItem.getText) {
+                this._logWrongValue("textBundle", "available", "not available");
+                return false;
+            }
+            var sText = oItem.getText();
+            if (this._cachedMessageBundleTexts[sText] !== id.metadata.textBundle) {
+                this._logWrongValue("tooltipBundle", id.metadata.textBundle, this._cachedMessageBundleTexts[sText]);
+                return false;
+            }
+            this._logCorrectValue("metadata.tooltipBundle", id.metadata.textBundle, id.metadata.textBundle);
+        }
+
+        if (typeof id.metadata.tooltipBundle !== "undefined") {
+            if (!oItem.getTooltip) {
+                this._logWrongValue("tooltipBundle", "available", "not available");
+                return false;
+            }
+            var sText = oItem.getTooltip();
+            if (this._cachedMessageBundleTexts[sText] !== id.metadata.tooltipBundle) {
+                this._logWrongValue("tooltipBundle", id.metadata.tooltipBundle, this._cachedMessageBundleTexts[sText]);
+                return false;
+            }
+            this._logCorrectValue("metadata.tooltipBundle", id.metadata.tooltipBundle, id.metadata.tooltipBundle);
+        }
+
+        if (typeof id.metadata.positionInAggregation !== "undefined" || typeof id.metadata.parentAggregation !== "undefined") {
+            var posInAgg = this.getPositionInAggregation(oItem);
+            if (typeof id.metadata.positionInAggregation !== "undefined") {
+                if (posInAgg.position !== id.metadata.positionInAggregation) {
+                    this._logWrongValue("positionInAggregation", id.metadata.positionInAggregation, posInAgg.position);
+                    return false;
+                }
+                this._logCorrectValue("metadata.positionInAggregation", id.metadata.positionInAggregation, id.metadata.positionInAggregation);
+            }
+            if (typeof id.metadata.parentAggregation !== "undefined") {
+                if (posInAgg.aggregation !== id.metadata.parentAggregation) {
+                    this._logWrongValue("parentAggregation", id.metadata.parentAggregation, posInAgg.aggregation);
+                    return false;
+                }
+                this._logCorrectValue("metadata.parentAggregation", id.metadata.parentAggregation, id.metadata.parentAggregation);
+            }
         }
     }
 
@@ -868,8 +915,8 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
 
     if (typeof id.tableSettings !== "undefined") {
         if (typeof id.tableSettings.insideATable !== "undefined" ||
-            typeof id.tableSettings.tableRow !== "undefined" || typeof id.tableSettings.tableCol !== "undefined" || typeof id.tableSettings.tableColId !== "undefined"
-            || typeof id.tableSettings.tableColDescr !== "undefined") {
+            typeof id.tableSettings.tableRow !== "undefined" || typeof id.tableSettings.tableCol !== "undefined" || typeof id.tableSettings.tableColId !== "undefined" ||
+            typeof id.tableSettings.tableColDescr !== "undefined") {
             var bIsInTable = false;
             let iTableRow = 0;
             let iTableCol = 0;
@@ -1384,8 +1431,8 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
     if (typeof id.functions !== "undefined" && typeof id.functions.checkItem !== "undefined") {
         try {
             if (id.functions.checkItem(oItem, id, function () {
-                return this.getElementInformation(oItem, oItem.getDomRef())
-            }.bind(this)) === false) {
+                    return this.getElementInformation(oItem, oItem.getDomRef())
+                }.bind(this)) === false) {
                 this._logWrongValue("id.functions.checkItem", true, false);
                 return false;
             }
@@ -1598,6 +1645,12 @@ ui5TestCafeSelectorDef.prototype._getTableData = function (oItem) {
         for (let i = 0; i < chartData.data.length; i++) {
             let oDataLine = {};
             for (let k = 0; k < oReturn.dimensions.length; k++) {
+                if (!chartData.data[i][k]) {
+                    oDataLine[oReturn.dimensions[k].id] = null;
+                    oDataLine[oReturn.dimensions[k].id + ".d"] = null;
+                    continue;
+                }
+
                 oDataLine[oReturn.dimensions[k].id] = chartData.data[i][k].v;
                 oDataLine[oReturn.dimensions[k].id + ".d"] = chartData.data[i][k].d;
             }
@@ -1802,6 +1855,8 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     oReturn.identifier.id = oItem.zenPureId ? oItem.zenPureId : oReturn.identifier.ui5Id;
 
     //get metadata..
+    const aggr = UI5ControlHelper.getPositionInAggregation(oItem);
+
     oReturn.metadata = {
         elementName: oItem.getMetadata().getElementName(),
         componentName: this._getOwnerComponent(oItem),
@@ -1810,7 +1865,11 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
         componentDescription: "",
         componentDataSource: {},
         lumiraType: "",
-        interactable: {}
+        interactable: {},
+        textBundle: "",
+        tooltipBundle: "",
+        positionInAggregation: aggr.position,
+        parentAggregation: aggr.aggregation
     };
 
 
@@ -1907,6 +1966,17 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
 
     //return all simple properties
     oReturn.property = this._getElementProperties(oItem);
+
+    if (oReturn.property["text"]) {
+        if (this._cachedMessageBundleTexts[oReturn.property["text"]]) {
+            oReturn.metadata.textBundle = this._cachedMessageBundleTexts[oReturn.property["text"]];
+        }
+    }
+    if (oReturn.property["tooltip"]) {
+        if (this._cachedMessageBundleTexts[oReturn.property["tooltip"]]) {
+            oReturn.metadata.tooltipBundle = this._cachedMessageBundleTexts[oReturn.property["tooltip"]];
+        }
+    }
 
     if (oItem.getMetadata()._sClassName === "sap.zen.crosstab.Crosstab") {
         oReturn.lumiraProperty["numberOfDimensionsOnRow"] = oItem.oHeaderInfo ? oItem.oHeaderInfo.getNumberOfDimensionsOnRowsAxis() : 0;
@@ -2010,7 +2080,7 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
                                     oReturn.tableSettings.tableCol = iVisibleColCounter;
                                     if (aCol && aCol.length && aCol.length > x) {
                                         oReturn.tableSettings.tableColId = this._getUi5Id(aCol[x]);
-                                        if ( aCol[x].getLabel && aCol[x].getLabel() && aCol[x].getLabel().getText ) {
+                                        if (aCol[x].getLabel && aCol[x].getLabel() && aCol[x].getLabel().getText) {
                                             oReturn.tableSettings.tableColDescr = aCol[x].getLabel().getText();
                                         } else {
                                             oReturn.tableSettings.tableColDescr = "";
@@ -2147,20 +2217,29 @@ ui5TestCafeSelectorDef.prototype._getSACTableData = function (oItem) {
 ui5TestCafeSelectorDef.prototype._readSACFilterData = function (aFilters) {
     var aFiltersRet = [];
     var aFiltersRelevant = aFilters.filter(function (e) {
-        if (e.entityId.find(function (f) { return f.id === "Version" })) {
+        if (e.entityId.find(function (f) {
+                return f.id === "Version"
+            })) {
             return false;
         }
         return true;
     });
     for (var i = 0; i < aFiltersRelevant.length; i++) {
-        var sAttr = aFiltersRelevant[i].entityId.map(function (f) { return f.id; }).join(",");
+        var sAttr = aFiltersRelevant[i].entityId.map(function (f) {
+            return f.id;
+        }).join(",");
         var aValues = aFiltersRelevant[i].originalValues.map(function (e) {
-            return { displayName: e.displayName, operator: e.operator }
+            return {
+                displayName: e.displayName,
+                operator: e.operator
+            }
         });
         aFiltersRet.push({
             attribute: sAttr,
             values: aValues,
-            exclude: typeof aFiltersRelevant[i].filters.find(function (e) { return e.exclude === true; }) !== "undefined"
+            exclude: typeof aFiltersRelevant[i].filters.find(function (e) {
+                return e.exclude === true;
+            }) !== "undefined"
         });
     }
     return aFiltersRet;
@@ -2301,8 +2380,8 @@ ui5TestCafeSelectorDef.prototype._getChildrenRec = function (oItemOrig, aChildre
             continue;
         }
         if (!aReturn.find(function (e) {
-            return e.id === oCtrl[0].getId();
-        })) {
+                return e.id === oCtrl[0].getId();
+            })) {
             aReturn.push({
                 id: oCtrl[0].getId(),
                 className: oCtrl[0].getMetadata()._sClassName,
@@ -2310,6 +2389,57 @@ ui5TestCafeSelectorDef.prototype._getChildrenRec = function (oItemOrig, aChildre
             });
         }
     }
+};
+
+
+
+ui5TestCafeSelectorDef.prototype.getAllMessageBundleTexts = function () {
+    if (!_wnd.$.isEmptyObject(this._cachedMessageBundleTexts)) {
+        return;
+    }
+
+    var oResBundle = sap.ui.getCore().getLibraryResourceBundle("sap.m");
+    if (!oResBundle) {
+        return {};
+    }
+    var aPropertyFiles = oResBundle.aPropertyFiles;
+    for (var i = 0; i < aPropertyFiles.length; i++) {
+        for (var sProperty in aPropertyFiles[i].mProperties) {
+            if (sProperty.startsWith("MSGBOX") === true) {
+                this._cachedMessageBundleTexts[aPropertyFiles[i].mProperties[sProperty]] = sProperty;
+            } else if (!this._cachedMessageBundleTexts[aPropertyFiles[i].mProperties[sProperty]]) {
+                this._cachedMessageBundleTexts[aPropertyFiles[i].mProperties[sProperty]] = sProperty;
+            }
+        }
+    }
+}
+
+ui5TestCafeSelectorDef.prototype.getPositionInAggregation = function (oItem) {
+    if (!oItem || !oItem.getParent()) {
+        return [];
+    }
+
+    var oParent = oItem.getParent();
+    var aAggregations = oParent.getMetadata().getAllAggregations();
+    for (var sAggregation in aAggregations) {
+        var aAggregationData = oParent["get" + sAggregation.charAt(0).toUpperCase() + sAggregation.substr(1)]();
+        if (!aAggregationData) {
+            continue;
+        }
+        for (var j = 0; j < aAggregationData.length; j++) {
+            if (aAggregationData[j] && aAggregationData[j].getId && aAggregationData[j].getId() === oItem.getId()) {
+                return {
+                    position: j + 1,
+                    aggregation: sAggregation
+                };
+            }
+        }
+    }
+
+    return {
+        position: 0,
+        aggregation: ""
+    };
 };
 
 ui5TestCafeSelectorDef.prototype._getChildren = function (oItem) {
@@ -2389,6 +2519,8 @@ ui5TestCafeSelectorDef.prototype._getCustomData = function (oItem) {
 };
 
 ui5TestCafeSelectorDef.prototype.getElementInformation = function (oItem, oDomNode, fnCustomData) {
+    this.getAllMessageBundleTexts();
+
     let oReturn = this._getEmptyReturn(true);
 
     if (!oItem) {
@@ -2402,8 +2534,7 @@ ui5TestCafeSelectorDef.prototype.getElementInformation = function (oItem, oDomNo
         try {
             var fnAddData = new Function('return ' + fnCustomData)();
             oReturn.enhancedData = fnAddData(oItem, oReturn);
-        } catch (err) {
-        }
+        } catch (err) {}
     }
 
     return oReturn;
@@ -2426,16 +2557,55 @@ ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function (aOutput) {
     }
 
     var aCols = [
-        new sap.m.Column({ width: "12em", hAlign: "Center", header: new sap.m.Label({ text: "Group" }) }),
-        new sap.m.Column({ width: "16em", hAlign: "Center", header: new sap.m.Label({ text: "Name" }) }),
-        new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Value" }) }),
-        new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Code" }) })];
+        new sap.m.Column({
+            width: "12em",
+            hAlign: "Center",
+            header: new sap.m.Label({
+                text: "Group"
+            })
+        }),
+        new sap.m.Column({
+            width: "16em",
+            hAlign: "Center",
+            header: new sap.m.Label({
+                text: "Name"
+            })
+        }),
+        new sap.m.Column({
+            hAlign: "Center",
+            header: new sap.m.Label({
+                text: "Value"
+            })
+        }),
+        new sap.m.Column({
+            hAlign: "Center",
+            header: new sap.m.Label({
+                text: "Code"
+            })
+        })
+    ];
 
 
-    var aCells = [new sap.m.Text({ text: "{group}" }), new sap.m.Text({ text: "{name}" }), new sap.m.Text({ text: "{value}" }), new sap.m.Text({ text: "{code}" })];
+    var aCells = [new sap.m.Text({
+        text: "{group}"
+    }), new sap.m.Text({
+        text: "{name}"
+    }), new sap.m.Text({
+        text: "{value}"
+    }), new sap.m.Text({
+        text: "{code}"
+    })];
     if (this._recordModeIdentifierBase) {
-        aCols.push(new sap.m.Column({ hAlign: "Center", header: new sap.m.Label({ text: "Debug-Selector Value" }) }));
-        aCells.push(new sap.m.ObjectStatus({ text: "{selectorValue}", state: "{selectorValueStatus}" }))
+        aCols.push(new sap.m.Column({
+            hAlign: "Center",
+            header: new sap.m.Label({
+                text: "Debug-Selector Value"
+            })
+        }));
+        aCells.push(new sap.m.ObjectStatus({
+            text: "{selectorValue}",
+            state: "{selectorValueStatus}"
+        }))
     }
 
     this._oSearchField = new sap.m.SearchField({
@@ -2470,7 +2640,8 @@ ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function (aOutput) {
     }
     aButtons.push(new sap.m.Button({
         text: "Goto Parent",
-        icon: "sap-icon://arrow-top", press: function () {
+        icon: "sap-icon://arrow-top",
+        press: function () {
             var oItem = this._oCurrentItemInRecordMode;
             var oParent = this._getParentWithDom(oItem, 1, false);
             if (!oParent) {
@@ -2484,26 +2655,56 @@ ui5TestCafeSelectorDef.prototype._getTableSelectDialog = function (aOutput) {
         content: aButtons
     });
 
-    var oTable = new sap.m.Table("tableInfo", { mode: "MultiSelect", columns: aCols, headerToolbar: oToolbar });
-    var oItemTemplate = new sap.m.ColumnListItem({ type: "Active", cells: aCells });
+    var oTable = new sap.m.Table("tableInfo", {
+        mode: "MultiSelect",
+        columns: aCols,
+        headerToolbar: oToolbar
+    });
+    var oItemTemplate = new sap.m.ColumnListItem({
+        type: "Active",
+        cells: aCells
+    });
     if (oTable.setSticky) {
         oTable.setSticky([sap.m.Sticky.ColumnHeaders, sap.m.Sticky.HeaderToolbar]);
     }
     var oScrollContainer = new sap.m.ScrollContainer({
-        width: "100%", horizontal: false, vertical: true, height: "570px", content: [oTable]
+        width: "100%",
+        horizontal: false,
+        vertical: true,
+        height: "570px",
+        content: [oTable]
     });
-    var oInput = new sap.m.Input("inpText", { editable: false });
-    var oFoundText = new sap.m.Text("inpResultText", { wrapping: true, maxLines: 3 });
+    var oInput = new sap.m.Input("inpText", {
+        editable: false
+    });
+    var oFoundText = new sap.m.Text("inpResultText", {
+        wrapping: true,
+        maxLines: 3
+    });
     this._oPopover = new sap.m.Dialog("detailsDialogPopover", {
         title: "Details of item",
         contentWidth: "70%",
         contentHeight: "80%",
-        beginButton: new sap.m.Button({ text: "Close and Continue Test", press: function () { this._oPopover.close(); this._fnRecordModeSelectResolve(); }.bind(this) }),
-        endButton: new sap.m.Button({ text: "Reselect", press: function () { this._oPopover.close(); }.bind(this) }),
+        beginButton: new sap.m.Button({
+            text: "Close and Continue Test",
+            press: function () {
+                this._oPopover.close();
+                this._fnRecordModeSelectResolve();
+            }.bind(this)
+        }),
+        endButton: new sap.m.Button({
+            text: "Reselect",
+            press: function () {
+                this._oPopover.close();
+            }.bind(this)
+        }),
         content: [oScrollContainer, oInput, oFoundText]
     });
     this._oPopover.addStyleClass("sapUiSizeCompact");
-    this._oPopoverModel = new sap.ui.model.json.JSONModel({ items: aOutput, currentCode: "" });
+    this._oPopoverModel = new sap.ui.model.json.JSONModel({
+        items: aOutput,
+        currentCode: ""
+    });
     this._oPopoverModel.setSizeLimit(10000);
     this._oPopover.setModel(this._oPopoverModel);
 
@@ -2617,73 +2818,225 @@ ui5TestCafeSelectorDef.prototype.onClickInRecordMode = function (oDomNode) {
     //(1) identifier..
     var aOutput = [];
 
-    aOutput.push({ parent: false, group: "Id", name: "Identifier", value: oData.identifier.ui5Id, code: "id(" + this._formatValueForCode(oData.identifier.ui5Id) + ")", selector: "identifier.id" });
+    aOutput.push({
+        parent: false,
+        group: "Id",
+        name: "Identifier",
+        value: oData.identifier.ui5Id,
+        code: "id(" + this._formatValueForCode(oData.identifier.ui5Id) + ")",
+        selector: "identifier.id"
+    });
 
     //loop over parents to add those identifiers..
     for (let i = 0; i < oData.parents.length; i++) {
-        aOutput.push({ parent: false, group: "Id", name: "Parent Identifier", value: oData.parents[i].identifier.ui5Id, selector: "parentAnyLevel.identifier.id", code: "parentId(" + this._formatValueForCode(oData.parents[i].identifier.ui5Id) + ")" });
+        aOutput.push({
+            parent: false,
+            group: "Id",
+            name: "Parent Identifier",
+            value: oData.parents[i].identifier.ui5Id,
+            selector: "parentAnyLevel.identifier.id",
+            code: "parentId(" + this._formatValueForCode(oData.parents[i].identifier.ui5Id) + ")"
+        });
     }
 
 
-    aOutput.push({ parent: false, group: "Metadata", name: "Class-Name", value: oData.metadata.elementName, code: "element(" + this._formatValueForCode(oData.metadata.elementName) + ")", selector: "metadata.elementName" });
-    aOutput.push({ parent: false, group: "Metadata", name: "Component", value: oData.metadata.componentName, code: "component(" + this._formatValueForCode(oData.metadata.componentName) + ")", selector: "metadata.componentName" });
-    aOutput.push({ parent: false, group: "Metadata", name: "Interactable", value: oData.metadata.interactable.interactable, code: "interactable()", selector: "metadata.interactable.interactable" });
-    aOutput.push({ parent: false, group: "Metadata", name: "Position in Parent", value: oData.positionInParent, code: "positionInParent(" + this._formatValueForCode(oData.positionInParent) + ")", selector: "positionInParent" });
+    aOutput.push({
+        parent: false,
+        group: "Metadata",
+        name: "Class-Name",
+        value: oData.metadata.elementName,
+        code: "element(" + this._formatValueForCode(oData.metadata.elementName) + ")",
+        selector: "metadata.elementName"
+    });
+    aOutput.push({
+        parent: false,
+        group: "Metadata",
+        name: "Component",
+        value: oData.metadata.componentName,
+        code: "component(" + this._formatValueForCode(oData.metadata.componentName) + ")",
+        selector: "metadata.componentName"
+    });
+    aOutput.push({
+        parent: false,
+        group: "Metadata",
+        name: "Interactable",
+        value: oData.metadata.interactable.interactable,
+        code: "interactable()",
+        selector: "metadata.interactable.interactable"
+    });
+    aOutput.push({
+        parent: false,
+        group: "Metadata",
+        name: "Position in Parent",
+        value: oData.positionInParent,
+        code: "positionInParent(" + this._formatValueForCode(oData.positionInParent) + ")",
+        selector: "positionInParent"
+    });
 
     if (oData.metadata.lumiraType) {
-        aOutput.push({ parent: false, group: "Metadata", name: "Lumira-Type", value: oData.metadata.componentName, code: "lumiraType(" + this._formatValueForCode(oData.metadata.lumiraType) + ")", selector: "metadata.lumiraType" });
+        aOutput.push({
+            parent: false,
+            group: "Metadata",
+            name: "Lumira-Type",
+            value: oData.metadata.componentName,
+            code: "lumiraType(" + this._formatValueForCode(oData.metadata.lumiraType) + ")",
+            selector: "metadata.lumiraType"
+        });
     }
     for (let i = 0; i < oData.parents.length; i++) {
-        aOutput.push({ parent: true, group: "Metadata", name: "Parent Class-Name", value: oData.parents[i].metadata.elementName, selector: "parentAnyLevel.metadata.elementName", code: "parentElementName(" + this._formatValueForCode(oData.parents[i].metadata.elementName) + ")" });
+        aOutput.push({
+            parent: true,
+            group: "Metadata",
+            name: "Parent Class-Name",
+            value: oData.parents[i].metadata.elementName,
+            selector: "parentAnyLevel.metadata.elementName",
+            code: "parentElementName(" + this._formatValueForCode(oData.parents[i].metadata.elementName) + ")"
+        });
     }
 
     for (let s in oData.property) {
-        aOutput.push({ parent: false, group: "Property", name: s, value: oData.property[s], code: "property('" + s + "'," + this._formatValueForCode(oData.property[s]) + ")", selector: "metadata.property." + s });
+        aOutput.push({
+            parent: false,
+            group: "Property",
+            name: s,
+            value: oData.property[s],
+            code: "property('" + s + "'," + this._formatValueForCode(oData.property[s]) + ")",
+            selector: "metadata.property." + s
+        });
     }
     for (let i = 0; i < oData.parents.length; i++) {
         for (let s in oData.parents[i].property) {
             aOutput.push({
-                parent: true, group: "Property", name: "Parent (" + (i + 1) + "): " + s, value: oData.parents[i].property[s], selector: "parentAnyLevel.property." + s, code: "parentPropery(" + s + "'," + this._formatValueForCode(oData.parents[i].property[s]) + ")"
+                parent: true,
+                group: "Property",
+                name: "Parent (" + (i + 1) + "): " + s,
+                value: oData.parents[i].property[s],
+                selector: "parentAnyLevel.property." + s,
+                code: "parentPropery(" + s + "'," + this._formatValueForCode(oData.parents[i].property[s]) + ")"
             });
         }
     }
 
-    aOutput.push({ parent: false, group: "Table-Settings", name: "Inside a Table", value: oData.tableSettings.insideATable, code: "insideATable()", selector: "tableSettings.insideATable" });
-    aOutput.push({ parent: false, group: "Table-Settings", name: "Table-Row", value: oData.tableSettings.tableRow, code: "row(" + this._formatValueForCode(oData.tableSettings.tableRow) + ")", selector: "tableSettings.tableRow" });
-    aOutput.push({ parent: false, group: "Table-Settings", name: "Table-Column", value: oData.tableSettings.tableCol, code: "column(" + this._formatValueForCode(oData.tableSettings.tableCol) + ")", selector: "tableSettings.tableCol" });
+    aOutput.push({
+        parent: false,
+        group: "Table-Settings",
+        name: "Inside a Table",
+        value: oData.tableSettings.insideATable,
+        code: "insideATable()",
+        selector: "tableSettings.insideATable"
+    });
+    aOutput.push({
+        parent: false,
+        group: "Table-Settings",
+        name: "Table-Row",
+        value: oData.tableSettings.tableRow,
+        code: "row(" + this._formatValueForCode(oData.tableSettings.tableRow) + ")",
+        selector: "tableSettings.tableRow"
+    });
+    aOutput.push({
+        parent: false,
+        group: "Table-Settings",
+        name: "Table-Column",
+        value: oData.tableSettings.tableCol,
+        code: "column(" + this._formatValueForCode(oData.tableSettings.tableCol) + ")",
+        selector: "tableSettings.tableCol"
+    });
 
     for (let s in oData.smartContext) {
-        aOutput.push({ parent: false, group: "Context", name: s, value: oData.smartContext[s], code: "context('" + s + "'," + this._formatValueForCode(oData.smartContext[s]) + ")", selector: "smartContext." + s });
+        aOutput.push({
+            parent: false,
+            group: "Context",
+            name: s,
+            value: oData.smartContext[s],
+            code: "context('" + s + "'," + this._formatValueForCode(oData.smartContext[s]) + ")",
+            selector: "smartContext." + s
+        });
     }
 
     for (let s in oData.binding) {
-        aOutput.push({ parent: false, group: "Binding", name: s, value: oData.binding[s].path, code: "bindingPath('" + s + "'," + this._formatValueForCode(oData.binding[s].path) + ")", selector: "binding." + s });
+        aOutput.push({
+            parent: false,
+            group: "Binding",
+            name: s,
+            value: oData.binding[s].path,
+            code: "bindingPath('" + s + "'," + this._formatValueForCode(oData.binding[s].path) + ")",
+            selector: "binding." + s
+        });
     }
 
     for (let s in oData.lumiraProperty) {
-        aOutput.push({ parent: false, group: "Lumira-Property", name: s, value: oData.lumiraProperty[s], code: "lumiraProperty('" + s + "'," + this._formatValueForCode(oData.lumiraProperty[s]) + ")", selector: "lumiraProperty." + s });
+        aOutput.push({
+            parent: false,
+            group: "Lumira-Property",
+            name: s,
+            value: oData.lumiraProperty[s],
+            code: "lumiraProperty('" + s + "'," + this._formatValueForCode(oData.lumiraProperty[s]) + ")",
+            selector: "lumiraProperty." + s
+        });
     }
 
     for (let s in oData.customData) {
-        aOutput.push({ parent: false, group: "Custom-Data", name: s, value: oData.customData[s], code: "customData('" + s + "'," + this._formatValueForCode(oData.customData[s]) + ")", selector: "customData." + s });
+        aOutput.push({
+            parent: false,
+            group: "Custom-Data",
+            name: s,
+            value: oData.customData[s],
+            code: "customData('" + s + "'," + this._formatValueForCode(oData.customData[s]) + ")",
+            selector: "customData." + s
+        });
     }
 
     for (let s in oData.childrenCount) {
-        aOutput.push({ parent: false, group: "Children-Count", name: s === "_all" ? "All" : s, value: oData.childrenCount[s], code: "childrenCount('" + s + "'," + this._formatValueForCode(oData.childrenCount[s]) + (s === "_all" ? "" : (",'" + s + "'")) + ")", selector: "childrenCount." + s });
+        aOutput.push({
+            parent: false,
+            group: "Children-Count",
+            name: s === "_all" ? "All" : s,
+            value: oData.childrenCount[s],
+            code: "childrenCount('" + s + "'," + this._formatValueForCode(oData.childrenCount[s]) + (s === "_all" ? "" : (",'" + s + "'")) + ")",
+            selector: "childrenCount." + s
+        });
     }
 
     if (oData.label && oData.label.textBinding) {
-        aOutput.push({ parent: false, group: "Label", name: "Text-Binding", value: oData.label.textBinding, code: "labelTextBinding(" + this._formatValueForCode(oData.label.textBinding) + ")", selector: "label.textBinding" });
+        aOutput.push({
+            parent: false,
+            group: "Label",
+            name: "Text-Binding",
+            value: oData.label.textBinding,
+            code: "labelTextBinding(" + this._formatValueForCode(oData.label.textBinding) + ")",
+            selector: "label.textBinding"
+        });
     }
     for (let s in oData.label.property) {
-        aOutput.push({ parent: false, group: "Label", name: s, value: oData.label.property[s], code: "labelProperty('" + s + "'," + this._formatValueForCode(oData.label.property[s]) + ")", selector: "label.property." + s });
+        aOutput.push({
+            parent: false,
+            group: "Label",
+            name: s,
+            value: oData.label.property[s],
+            code: "labelProperty('" + s + "'," + this._formatValueForCode(oData.label.property[s]) + ")",
+            selector: "label.property." + s
+        });
     }
     for (let s in oData.itemdata) {
-        aOutput.push({ parent: false, group: "Itemdata", name: s, value: oData.itemdata[s], code: "itemdata('" + s + "'," + this._formatValueForCode(oData.itemdata[s]) + ")", selector: "itemdata." + s });
+        aOutput.push({
+            parent: false,
+            group: "Itemdata",
+            name: s,
+            value: oData.itemdata[s],
+            code: "itemdata('" + s + "'," + this._formatValueForCode(oData.itemdata[s]) + ")",
+            selector: "itemdata." + s
+        });
     }
 
     if (oData.sac) {
-        aOutput.push({ parent: false, group: "SAC", name: "Widget-Id", value: oData.sac.widgetId, code: "sac().widgetId(" + this._formatValueForCode(oData.sac.widgetId) + ")", selector: "sac.widgetId" });
+        aOutput.push({
+            parent: false,
+            group: "SAC",
+            name: "Widget-Id",
+            value: oData.sac.widgetId,
+            code: "sac().widgetId(" + this._formatValueForCode(oData.sac.widgetId) + ")",
+            selector: "sac.widgetId"
+        });
     }
 
     for (var i = 0; i < aOutput.length; i++) {

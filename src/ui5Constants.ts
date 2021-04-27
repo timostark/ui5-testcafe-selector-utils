@@ -53,7 +53,7 @@ class ConstantReader {
     }
 
     getUser(role: UserRole, sys: SystemType): LoginUser {
-        if ( process.env.TESTCAFE_LOCAL_USER && process.env.TESTCAFE_LOCAL_PASSWORD ) {
+        if ( sys === SystemType.FIORI && process.env.TESTCAFE_LOCAL_USER && process.env.TESTCAFE_LOCAL_PASSWORD ) {
             return new LoginUser(process.env.TESTCAFE_LOCAL_USER, process.env.TESTCAFE_LOCAL_PASSWORD);
         }
         
