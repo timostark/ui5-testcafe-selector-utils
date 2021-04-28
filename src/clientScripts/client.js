@@ -1855,7 +1855,7 @@ ui5TestCafeSelectorDef.prototype._getElementInformation = function (oItem, oDomN
     oReturn.identifier.id = oItem.zenPureId ? oItem.zenPureId : oReturn.identifier.ui5Id;
 
     //get metadata..
-    const aggr = UI5ControlHelper.getPositionInAggregation(oItem);
+    const aggr = this.getPositionInAggregation(oItem);
 
     oReturn.metadata = {
         elementName: oItem.getMetadata().getElementName(),
@@ -2398,10 +2398,9 @@ ui5TestCafeSelectorDef.prototype.getAllMessageBundleTexts = function () {
         return;
     }
 
-    var oResBundle = sap.ui.getCore().getLibraryResourceBundle("sap.m");
-    if (!oResBundle) {
-        return {};
-    }
+    this._cachedMessageBundleTexts = {};
+
+    var oResBundle = _wnd.sap.ui.getCore().getLibraryResourceBundle("sap.m");
     var aPropertyFiles = oResBundle.aPropertyFiles;
     for (var i = 0; i < aPropertyFiles.length; i++) {
         for (var sProperty in aPropertyFiles[i].mProperties) {
