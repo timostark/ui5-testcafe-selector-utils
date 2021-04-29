@@ -804,6 +804,20 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
         var bPropVisible = oItem["getVisible"] ? oItem["getVisible"]() : null;
         var bPropEnabled = oItem["getEnabled"] ? oItem["getEnabled"]() : null;
 
+        //check if element has any parent of type dialog, with an not-open popup..
+        if (typeof id.metadata.interactable.visible !== "undefined") {
+            var oItemCur = oItem;
+            while (oItemCur) {
+                if (oItemCur.oPopup && oItemCur.oPopup.getMetadata && oItemCur.oPopup.getMetadata()._sClassName === "sap.ui.core.Popup" ) {
+                    if (oItemCur.oPopup.eOpenState !== "OPEN") {
+                        this._logWrongValue("metadata.interactable.enabled", id.metadata.interactable.enabled, "popup state is opening");
+                        return false;
+                    }
+                }
+                oItemCur = oItemCur.getParent();
+            }
+        }
+
         if (typeof id.metadata.interactable.enabled !== "undefined" && bPropEnabled !== null) {
             if (id.metadata.interactable.enabled != bPropEnabled) {
                 this._logWrongValue("metadata.interactable.enabled", id.metadata.interactable.enabled, bPropEnabled);

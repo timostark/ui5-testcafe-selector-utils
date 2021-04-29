@@ -144,10 +144,24 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
         t.ctx.name = startup.description;
         t.ctx.testCase = startup.testCase;
 
+        
+        var aQueue = [];
+        var iStillOpen = 0;
+        var tCast = t as any;
+        if ( tCast && tCast.testRun && tCast.testRun.browserConnection && tCast.testRun.browserConnection.jobQueue && tCast.testRun.browserConnection.jobQueue.length ) {
+            aQueue = tCast.testRun.browserConnection.jobQueue;
+            for ( var j=0;j<aQueue.length;j++) {
+                var oQueueItem = aQueue[j];
+                if ( oQueueItem && oQueueItem._testRunControllerQueue && oQueueItem._testRunControllerQueue.length ) {
+                    iStillOpen = iStillOpen + oQueueItem._testRunControllerQueue.length;
+                }
+            }
+        }
+
         ui5ActionDef.currentTestRun = t;
         let ui5ActionsDefForRun = new ui5ActionDef(t);
         var sTime = Math.round(((process.uptime()) + Number.EPSILON) * 100) / 100;
-        console.log("\u001b[1m" + startup.testCase + " : '" + startup.description + "' started after " + sTime + "s\u001b[22m");
+        console.log("\u001b[1m" + startup.testCase + " : '" + startup.description + "' started after " + sTime + "s ( still open: " + iStillOpen + " )\u001b[22m");
 
         if (startup.isLaunchpad === true) {
             await ui5Launchpad.startup({
