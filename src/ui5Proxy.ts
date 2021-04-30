@@ -110,6 +110,14 @@ class ui5ProxyDef {
         }
     }
 
+    public getAdjustedUrl() {
+        return this._adjustedUrl;
+    }
+
+    public isRunning() {
+        return this._bCoverageStarted;
+    }
+
     public startCoverageProxy(url: string, config: ui5CoverageConfiguration): string {
         let urlParse = new Url(url);
         let urlHost = urlParse.protocol + "//" + urlParse.host;
@@ -183,6 +191,12 @@ class ui5ProxyDef {
                     if (proxyRes.req.path.indexOf("sap-ui-core.js") !== -1) {
                         if (that._config?.log === true) {
                             console.log("skipped " + proxyRes.req.path + " as it is a a SAPUI5 file");
+                        }
+                        return proxyResData;
+                    }
+                    if ( proxyRes.req.path.indexOf("helpers-dbg.js") !== -1) {
+                        if (that._config?.log === true) {
+                            console.log("skipped " + proxyRes.req.path + " as it is a babel-helper file");
                         }
                         return proxyResData;
                     }

@@ -82,7 +82,7 @@ class ui5TestDataDef {
 
             const req = request(options, res => {
                 res.on("data", data => {
-                    console.log("Test-Data-Container " + testCase + " unloadd");
+                    console.log("Test-Data-Container " + testCase + " unload");
                     resolve(data);
                 });
             });

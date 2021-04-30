@@ -1,13 +1,15 @@
-import { t } from "testcafe";
+import { ClientFunction, t } from "testcafe";
 import { LoginUser, ui5, ui5TestData, UserRole, ui5Constants, SystemType } from ".";
 import { ui5Action } from "./ui5Action";
 import { ui5Config } from "./ui5Config";
+import { ui5Proxy } from "./ui5Proxy";
 import { ui5Waiter } from "./ui5Waiter";
 
 export interface ui5LaunchpadStartupParams {
     role: UserRole;
     testData?: string,
     tile?: string;
+    tileDirect?: boolean;
 }
 
 class ui5LaunchpadDef {
@@ -20,12 +22,25 @@ class ui5LaunchpadDef {
             testDataPromise = ui5TestData.createTestData(params.role, params.testData, t.ctx.testCase);
         }
 
+        if (params.tileDirect === true) {
+            let windowLoc = await ClientFunction(() => window.location)();
+            await t.navigateTo(windowLoc.pathname + windowLoc.search + params.tile);
+        }
+
         await this.login(user.user, user.pw);
 
+        if( ui5Config.coverage && ui5Config.coverage.enabled === true && ui5Proxy.isRunning() ) {
+            //foreward again to our url we want to go - that is required, because the login will "destroy" our actual url with debug components..
+            await t.navigateTo(ui5Proxy.getAdjustedUrl());
+        }
+
         //wait for the launchpad to be loaded.. 
-        await ui5Waiter.waitForLaunchpadToBeLoaded();
-        
-        if(testDataPromise) {
+        if (params.tileDirect !== true) {
+            await ui5Waiter.waitForLaunchpadToBeLoaded();
+        }
+
+
+        if (testDataPromise) {
             await testDataPromise;
         }
 
@@ -34,7 +49,7 @@ class ui5LaunchpadDef {
             await ui5Action.deactivateAnimation();
         }
 
-        if (params.tile) {
+        if (params.tile && params.tileDirect !== true) {
             await this.openTile(params.tile);
         }
     }
@@ -44,8 +59,8 @@ class ui5LaunchpadDef {
     }
 
     async login(userName: string, password: string) {
-        await ui5Action.typeText(ui5("User-Name Field").domQuery('#USERNAME_FIELD-inner'), userName)
-            .typeText(ui5("Password Field").domQuery('#PASSWORD_FIELD-inner'), password, { anonymize: true })
+        await ui5Action.typeText(ui5("User-Name Field").domQuery('#USERNAME_FIELD-inner'), userName, { paste: true })
+            .typeText(ui5("Password Field").domQuery('#PASSWORD_FIELD-inner'), password, { anonymize: true, paste: true })
             .click(ui5("Login Button").domQuery("#LOGIN_LINK"));
     }
 

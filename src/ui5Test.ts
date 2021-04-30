@@ -6,7 +6,6 @@ import { ui5Coverage } from "./ui5Coverage";
 import { ui5CacheRequestHooks } from "./ui5Cache";
 import { ui5Lumira } from "./ui5Lumira";
 import { ui5TestData } from "./ui5TestData";
-import { start } from "repl";
 
 process.setMaxListeners(0);
 
@@ -58,6 +57,7 @@ export interface ui5LaunchpadStartupParams {
     role: UserRole,
     testData?: string,
     tile?: string;
+    tileDirect ?: boolean;
 }
 
 interface ui5MergedParams {
@@ -67,6 +67,7 @@ interface ui5MergedParams {
     testData?: string,
     parameter?: BOParameter[];
     tile?: string;
+    tileDirect ?: boolean;
     isLaunchpad: boolean;
 }
 
@@ -89,7 +90,8 @@ export function ui5Test(startup: ui5LaunchpadStartupParams, func: (actionDef: ui
         testData: startup.testData,
         role: startup.role,
         isLaunchpad: true,
-        tile: startup.tile
+        tile: startup.tile,
+        tileDirect: startup.tileDirect
     };
     return ui5TestInternal(params, func);
 };
@@ -167,7 +169,8 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
             await ui5Launchpad.startup({
                 role: startup.role,
                 testData: startup.testData,
-                tile: startup.tile
+                tile: startup.tile,
+                tileDirect: startup.tileDirect
             });
         } else {
             await ui5Lumira.startup({

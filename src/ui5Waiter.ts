@@ -1,5 +1,7 @@
-import { ClientFunction } from "testcafe";
+import { ClientFunction, Selector, t } from "testcafe";
 import { ui5 } from ".";
+import { ui5Action } from "./ui5Action";
+import { ui5Config } from "./ui5Config";
 
 class ui5WaiterDef {
     async waitForBOToBeLoaded() {
@@ -7,27 +9,9 @@ class ui5WaiterDef {
     }
 
     async waitForLaunchpadToBeLoaded() {
-        const fnWaitLoaded = ClientFunction(() => {
-            return new Promise((resolve, reject) => {
-                var iTimeout = setTimeout(e => {
-                    reject(); //timeouts after 100 seconds
-                }, 100000);
-                var iInterval = setInterval(e => {
-                    //very very bad style - i do not really find an event, which is saying "i am done" - this is the closest i can get
-                    //this document is called duringstartup
-                    // @ts-ignore
-                    var oFloatingContainer = window["sap"]["ui"].getCore().byId("shell-floatingContainer");
-                    if (oFloatingContainer) {
-                        clearInterval(iInterval);
-                        clearTimeout(iTimeout);
-                        console.clear(); //skipp all errors which came up during startup..
-                        // @ts-ignore
-                        resolve();
-                    }
-                }, 10);
-            });
-        });
-        await fnWaitLoaded();
+        //very very bad style - i do not really find an event, which is saying "i am done" - this is the closest i can get
+        //this document is called duringstartup
+        await ui5Action.expectExists(ui5().domQuery("#shell-floatingContainer")).ok("Wait for Launchpad to be loaded failed", { timeout: ui5Config.tileOpeningTimeout });
     }
 }
 
