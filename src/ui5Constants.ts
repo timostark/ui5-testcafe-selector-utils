@@ -56,6 +56,9 @@ class ConstantReader {
         if ( sys === SystemType.FIORI && process.env.TESTCAFE_LOCAL_USER && process.env.TESTCAFE_LOCAL_PASSWORD ) {
             return new LoginUser(process.env.TESTCAFE_LOCAL_USER, process.env.TESTCAFE_LOCAL_PASSWORD);
         }
+        if ( sys === SystemType.BO && process.env.TESTCAFE_LOCAL_BO_USER && process.env.TESTCAFE_LOCAL_BO_PASSWORD ) {
+            return new LoginUser(process.env.TESTCAFE_LOCAL_BO_USER, process.env.TESTCAFE_LOCAL_BO_PASSWORD);
+        }
         
         let oUser = this._config["users"][role][this._enviroment][sys];
         return new LoginUser(oUser.userId, ui5Password.decrypt(oUser.password));

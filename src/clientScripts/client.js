@@ -1,11 +1,17 @@
-let _wnd = window;
-let iFrames = document.getElementsByTagName("iframe");
-for (let i = 0; i < iFrames.length; i++) {
-    if (iFrames[i].contentWindow && iFrames[i].contentWindow.sap) {
-        _wnd = iFrames[i].contentWindow;
-        break;
+
+function getCurrentWindow() {
+    let _wndLocal = window;
+    let iFrames = document.getElementsByTagName("iframe");
+    for (let i = 0; i < iFrames.length; i++) {
+        if (iFrames[i].contentWindow && iFrames[i].contentWindow.sap) {
+            _wndLocal = iFrames[i].contentWindow;
+            break;
+        }
     }
+    return _wndLocal;
 }
+
+let _wnd = getCurrentWindow();
 
 window.addEventListener('error', function (e) {
     if (e.error) {
@@ -96,7 +102,7 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
         if (this._getIsInstanceOf(aItem.control()[0], "sap.m.InputBase") && typeof id.domChildWith === "undefined") {
             let sIdUsed = oField.id;
             if (sIdUsed && !sIdUsed.endsWith("-inner")) {
-                let oElement = document.getElementById(sIdUsed + "-inner");
+                let oElement = _wnd.document.getElementById(sIdUsed + "-inner");
                 if (oElement) {
                     aItem = _wnd.$(oElement);
                 }
@@ -104,7 +110,7 @@ ui5TestCafeSelectorDef.prototype.findBy = function (id) {
         }
 
         if (typeof id.domChildWith !== "undefined") {
-            let oElement = document.getElementById(oItem.getId() + id.domChildWith);
+            let oElement = _wnd.document.getElementById(oItem.getId() + id.domChildWith);
             if (oElement) {
                 aItem = _wnd.$(oElement);
             }
@@ -808,7 +814,7 @@ ui5TestCafeSelectorDef.prototype._checkItem = function (oItem, id) {
         if (typeof id.metadata.interactable.visible !== "undefined") {
             var oItemCur = oItem;
             while (oItemCur) {
-                if (oItemCur.oPopup && oItemCur.oPopup.getMetadata && oItemCur.oPopup.getMetadata()._sClassName === "sap.ui.core.Popup" ) {
+                if (oItemCur.oPopup && oItemCur.oPopup.getMetadata && oItemCur.oPopup.getMetadata()._sClassName === "sap.ui.core.Popup") {
                     if (oItemCur.oPopup.eOpenState !== "OPEN") {
                         this._logWrongValue("metadata.interactable.enabled", id.metadata.interactable.enabled, "popup state is opening");
                         return false;
@@ -1510,6 +1516,10 @@ ui5TestCafeSelectorDef.prototype.find = function (id) {
         }
     }
 
+    if ( typeof _wnd.sap === "undefined" ) {
+        _wnd = getCurrentWindow();
+    }
+
     if (typeof _wnd.sap === "undefined" || typeof _wnd.sap.ui === "undefined" || typeof _wnd.sap.ui.getCore === "undefined" || !_wnd.sap.ui.getCore() || !_wnd.sap.ui.getCore().isInitialized()) {
         return [];
     }
@@ -2209,7 +2219,7 @@ ui5TestCafeSelectorDef.prototype._getSACTableData = function (oItem) {
             bHasFactCell = true;
 
             //add to line to data-cells..
-            var oCellDomRef = $('#' + oItem.getId() + ' td').filter('*[data-row="' + iLine + '"]').filter('*[data-col="' + iCol + '"]');
+            var oCellDomRef = _wnd.$('#' + oItem.getId() + ' td').filter('*[data-row="' + iLine + '"]').filter('*[data-col="' + iCol + '"]');
 
             oReturn.dataPoints.push({
                 xValue: iCol,
@@ -2460,7 +2470,7 @@ ui5TestCafeSelectorDef.prototype._getChildren = function (oItem) {
         return [];
     }
 
-    var aChildren = document.getElementById(oItem.getDomRef().id).children;
+    var aChildren = _wnd.document.getElementById(oItem.getDomRef().id).children;
 
     var aItems = [];
     this._getChildrenRec(oItem, aChildren, aItems);
@@ -3095,16 +3105,24 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
         bubbles: true,
         cancelable: true
     });
-    oDOMNode.dispatchEvent(event);
+    if (oDOMNode) {
+        oDOMNode.dispatchEvent(event);
+    }
+
+    if(!_wnd.sap) {
+        _wnd = getCurrentWindow();
+    }
 
     const oDOMForArrow = this._getHammerheadShadowUiByClass("cursor-hammerhead-shadow-ui");
-    $(oDOMForArrow).css("display", "none");
+    if (oDOMForArrow) {
+        oDOMForArrow.style.display = 'none';
+    }
 
     this._recordModeIdentifierBase = id ? id : null;
     this._recordModeAllowInteraction = false;
 
     //@ts-ignore
-    $("<style type='text/css'>.UI5TR_ElementHover,\
+    _wnd.$("<style type='text/css'>.UI5TR_ElementHover,\
             .UI5TR_ElementHover * {\
                 background: rgba(193, 137, 156,0.5)!important;\
             }\
@@ -3124,20 +3142,20 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
     var that = this;
     this._bSelectDialogIsOpen = false;
 
-    var fnMouseOverBefore = document.onmouseover;
-    document.onmouseover = function (e) {
+    var fnMouseOverBefore = _wnd.document.onmouseover;
+    _wnd.document.onmouseover = function (e) {
         if (that._bSelectDialogIsOpen === true || that._recordModeAllowInteraction === true) {
             return;
         }
         //@ts-ignore
-        var e = e || window.event,
+        var e = e || _wnd.window.event,
             el = e.target || e.srcElement;
         //@ts-ignore
         el.classList.add("UI5TR_ElementHover");
     };
 
-    var fnMouseOutBefore = document.onmouseout;
-    document.onmouseout = function (e) {
+    var fnMouseOutBefore = _wnd.document.onmouseout;
+    _wnd.document.onmouseout = function (e) {
         //@ts-ignore
         var e = e || _wnd.window.event,
             el = e.target || e.srcElement;
@@ -3154,12 +3172,12 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
         event.stopPropagation();
         event.stopImmediatePropagation();
 
-        event = event || window.event;
+        event = event || _wnd.event;
         var el = event.target || event.srcElement;
         window.ui5TestCafeSelector.onClickInRecordMode(el);
     };
 
-    document.addEventListener('click', fnClickEventListener, true);
+    _wnd.document.addEventListener('click', fnClickEventListener, true);
 
     if (this._recordModeIdentifierBase) {
         debugger;
@@ -3180,9 +3198,9 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
         if (oCurrentlyPressed["Control"] && oCurrentlyPressed["Alt"] && (oCurrentlyPressed["C"] || oCurrentlyPressed["c"])) {
             that._recordModeAllowInteraction = that._recordModeAllowInteraction === false;
             if (that._recordModeAllowInteraction) {
-                sap.m.MessageToast.show("Interaction Mode activated");
+                _wnd.sap.m.MessageToast.show("Interaction Mode activated");
             } else {
-                sap.m.MessageToast.show("Record Mode activated");
+                _wnd.sap.m.MessageToast.show("Record Mode activated");
             }
         }
     };
@@ -3191,20 +3209,20 @@ ui5TestCafeSelectorDef.prototype.startRecordMode = function (id) {
             oCurrentlyPressed[e.key] = false;
         }
     };
-    sap.m.MessageToast.show("Press CTRL+ALT+C to switch between record and interaction mode...");
+    _wnd.sap.m.MessageToast.show("Press CTRL+ALT+C to switch between record and interaction mode...");
 
-    document.addEventListener("keydown", fnOnKeyDown);
-    document.addEventListener("keyup", fnOnKeyUp);
+    _wnd.document.addEventListener("keydown", fnOnKeyDown);
+    _wnd.document.addEventListener("keyup", fnOnKeyUp);
 
     return new Promise(function (resolve) {
         this._fnRecordModeSelectResolve = function () {
-            $(oDOMForArrow).css("display", "");
+            oDOMForArrow.style.display = '';
             this._oCurrentItemInRecordMode = null;
-            document.removeEventListener("click", fnClickEventListener, true);
-            document.removeEventListener("keydown", fnOnKeyDown);
-            document.removeEventListener("keyup", fnOnKeyUp);
-            document.onmouseover = fnMouseOverBefore;
-            document.onmouseout = fnMouseOutBefore;
+            _wnd.document.removeEventListener("click", fnClickEventListener, true);
+            _wnd.document.removeEventListener("keydown", fnOnKeyDown);
+            _wnd.document.removeEventListener("keyup", fnOnKeyUp);
+            _wnd.document.onmouseover = fnMouseOverBefore;
+            _wnd.document.onmouseout = fnMouseOutBefore;
             resolve();
         };
     }.bind(this));

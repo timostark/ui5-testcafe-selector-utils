@@ -69,6 +69,7 @@ interface ui5MergedParams {
     tile?: string;
     tileDirect ?: boolean;
     isLaunchpad: boolean;
+    isLumira: boolean;
 }
 
 export function lumiraTest(startup: ui5BOLaunchpadParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
@@ -78,6 +79,7 @@ export function lumiraTest(startup: ui5BOLaunchpadParams, func: (actionDef: ui5A
         testData: startup.testData,
         role: startup.role,
         isLaunchpad: false,
+        isLumira: true,
         parameter: startup.parameter
     };
     return ui5TestInternal(params, func);
@@ -90,6 +92,21 @@ export function ui5Test(startup: ui5LaunchpadStartupParams, func: (actionDef: ui
         testData: startup.testData,
         role: startup.role,
         isLaunchpad: true,
+        isLumira: false,
+        tile: startup.tile,
+        tileDirect: startup.tileDirect
+    };
+    return ui5TestInternal(params, func);
+};
+
+export function ui5FreestyleTest(startup: ui5LaunchpadStartupParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
+    let params: ui5MergedParams = {
+        description: startup.description,
+        testCase: startup.testCase,
+        testData: startup.testData,
+        role: startup.role,
+        isLaunchpad: false,
+        isLumira: false,
         tile: startup.tile,
         tileDirect: startup.tileDirect
     };
@@ -145,6 +162,7 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
     }).meta('TEST_CASE', startup.testCase).requestHooks(ui5CacheRequestHooks())(startup.description, async t => {
         t.ctx.name = startup.description;
         t.ctx.testCase = startup.testCase;
+        t.ctx.isLaunchpad = startup.isLaunchpad;
 
         
         var aQueue = [];
@@ -172,7 +190,7 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
                 tile: startup.tile,
                 tileDirect: startup.tileDirect
             });
-        } else {
+        } else if ( startup.isLumira === true ) {
             await ui5Lumira.startup({
                 role: startup.role,
                 testData: startup.testData,

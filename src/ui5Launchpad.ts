@@ -44,7 +44,6 @@ class ui5LaunchpadDef {
             await testDataPromise;
         }
 
-
         if (ui5Config.launchpad.deactivateAnimation === true) {
             await ui5Action.deactivateAnimation();
         }
@@ -64,8 +63,58 @@ class ui5LaunchpadDef {
             .click(ui5("Login Button").domQuery("#LOGIN_LINK"));
     }
 
+    async getPerformanceMetrics() {
+      const getLoadTime = JSON.parse(await t.eval(() => JSON.stringify(window.performance.timing)));
+      const p = await getLoadTime(t);
+      const timeToMS = ( time: number ) => parseInt( (time / 10).toString(), 10);
+    
+      const raw = {
+        navigationStart: p.navigationStart,
+        unloadEventStart: p.unloadEventStart,
+        unloadEventEnd: p.unloadEventEnd,
+        redirectStart: p.redirectStart,
+        redirectEnd: p.redirectEnd,
+        fetchStart: p.fetchStart,
+        domainLookupStart: p.domainLookupStart,
+        domainLookupEnd: p.domainLookupEnd,
+        connectStart: p.connectStart,
+        connectEnd: p.connectEnd,
+        secureConnectionStart: p.secureConnectionStart,
+        requestStart: p.requestStart,
+        responseStart: p.responseStart,
+        responseEnd: p.responseEnd,
+        domLoading: p.domLoading,
+        domInteractive: p.domInteractive,
+        domContentLoadedEventStart: p.domContentLoadedEventStart,
+        domContentLoadedEventEnd: p.domContentLoadedEventEnd,
+        domComplete: p.domComplete,
+        loadEventStart: p.loadEventStart,
+        loadEventEnd: p.loadEventEnd
+      };
+    
+      const computed = {
+        ttfb: timeToMS(raw.responseEnd - raw.navigationStart),
+        dns: timeToMS(raw.domainLookupEnd - raw.domainLookupStart),
+        tcp: timeToMS(raw.connectEnd - raw.connectStart),
+        domReady: timeToMS(raw.domComplete - raw.navigationStart),
+        networkLatency: timeToMS(raw.responseEnd - raw.fetchStart),
+        processing: timeToMS(raw.loadEventEnd - raw.responseEnd),
+        everything: timeToMS(raw.loadEventEnd - raw.navigationStart)
+      };
+    
+      return { raw, computed };
+    };
+    
+
     async openTile(sHash: string) {
-        await ui5Action.click(ui5("Launchpad-Tile " + sHash).genericTile().parentProperty("target", sHash).timeout(ui5Config.tileOpeningTimeout));
+        //check if launchpad tile is available.. if yes --> click it, otherwise navigate via URL to save time..
+        const tileHash = ui5("Launchpad-Tile " + sHash).genericTile().parentProperty("target", sHash);
+        if ( await tileHash.build().exists ) {
+            await ui5Action.click(tileHash);
+        } else {
+            let windowLoc = await ClientFunction(() => window.location)();
+            await t.navigateTo(windowLoc.pathname + windowLoc.search + sHash);
+        }
     }
 }
 

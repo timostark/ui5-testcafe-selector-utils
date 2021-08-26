@@ -82,7 +82,7 @@ class ui5TestDataDef {
 
             const req = request(options, res => {
                 res.on("data", data => {
-                    console.log("Test-Data-Container " + testCase + " unload");
+                    console.log("Test-Data-Container " + testData + " unloaded");
                     resolve(data);
                 });
             });
@@ -113,8 +113,12 @@ class ui5TestDataDef {
             };
 
             const req = request(options, res => {
+                console.log("Test-Data-Container " + testData + " loaded with status code " + res.statusCode);
+                let stCode = res.statusCode;
                 res.on("data", data => {
-                    console.log("Test-Data-Container " + testCase + " loaded");
+                    if ( stCode && stCode > 300 ) {
+                        process.stdout.write(data);
+                    }
                     resolve(data);
                 });
             });

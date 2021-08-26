@@ -5,7 +5,7 @@ import { ui5Config } from "./ui5Config";
 
 class ui5WaiterDef {
     async waitForBOToBeLoaded() {
-        await ui5().domQuery('#sap-ui-blocklayer-popup').expectVisible(false).notOK("Busy Indicator must go away!", { timeout: 120000 });
+        await ui5().domQuery('#sap-ui-blocklayer-popup').expectVisible(false).notOK("Busy Indicator must go away!", { timeout: ui5Config.tileOpeningTimeout });
     }
 
     async waitForLaunchpadToBeLoaded() {

@@ -352,7 +352,7 @@ interface ui5ActionDefIntf {
     drag(selector: UI5ChainSelection | Selector, dragOffsetX: number, dragOffsetY: number, options?: MouseActionOptions): ui5ActionDefPromise;
     hover(selector: UI5ChainSelection | Selector, options?: MouseActionOptions): ui5ActionDefPromise;
     doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise;
-    selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise;
+    selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise;
     selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise;
     selectElementByIndex(selectorParent: UI5ChainSelection, index: number): ui5ActionDefPromise;
 
@@ -435,8 +435,8 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
     public doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         return this.getRunDef().doubleClick(selector, options);
     }
-    public selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise {
-        return this.getRunDef().selectElement(selectorParent, key);
+    public selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise {
+        return this.getRunDef().selectElement(selectorParent, key, withType);
     }
     public selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise {
         return this.getRunDef().selectElementByText(selectorParent, text);
@@ -507,11 +507,21 @@ class ui5ActionDef implements ui5ActionDefIntf {
 
     public async debugSelector(selector?: UI5ChainSelection) {
         var oId = (<any>selector)?._id;
+        
+        if ( this._getCurrentTestIsLaunchpad() === false ) {
+            await this.t.switchToMainWindow();
+        }
+
         const cntStart = ClientFunction(function (oId) {
             // @ts-ignore
             return window.ui5TestCafeSelector.startRecordMode(oId);
         });
         await cntStart(oId);
+
+        if ( this._getCurrentTestIsLaunchpad() === false ) {
+            await t.switchToIframe("#openDocChildFrame");
+        }
+
     }
 
     private async _logSelector(traceOptions?: ui5TraceOptions) {
@@ -700,9 +710,16 @@ class ui5ActionDef implements ui5ActionDefIntf {
             click(ui5().parent(selectorParent.clone()).itemdata("text", text));
     }
 
-    public selectElement(selectorParent: UI5ChainSelection, key: string): ui5ActionDefPromise {
-        return this.click(selectorParent.clone().comboBox().arrow()).
-            click(ui5().parent(selectorParent.clone()).itemdata("key", key));
+    public selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise {
+        if ( withType === true ) {
+            return this.
+                click(selectorParent.clone().comboBox().arrow()).
+                typeText(selectorParent.clone().comboBox(), key).
+                click(ui5().parent(selectorParent.clone()).itemdata("key", key));
+        } else {
+            return this.click(selectorParent.clone().comboBox().arrow()).
+                click(ui5().parent(selectorParent.clone()).itemdata("key", key));
+        }
     }
 
     public doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
@@ -857,12 +874,28 @@ class ui5ActionDef implements ui5ActionDefIntf {
         return <any>oProm;
     }
 
+    private _getCurrentTestIsLaunchpad(t?: TestController): boolean {
+        t = t ? t : ui5ActionDef.currentTestRun;
+
+        if (t.ctx && typeof t.ctx.isLaunchpad !== "undefined") {
+            return t.ctx.isLaunchpad;
+        }
+        return true;
+    }
+
+
     private _delegateAPIToPromise(_handler: any, dest: any) {
-        ["click", "typeText", "clearText", "traceSelector", "expectExists", "expectCount", "expectVisible", "expectProperty", "expectAny", "expect", "deactivateAnimation", "selectElement", "traceSelector", "doubleClick", "rightClick", "hover", "drag", "dragToElement", "selectText", "takeElementScreenshot", "pressKey", "blur", "selectElement"].forEach((srcProp) => {
+        ["click", "typeText", "clearText", "traceSelector", "_getCurrentTestIsLaunchpad", "expectExists", "expectCount", "expectVisible", "expectProperty", "expectAny", "expect", "deactivateAnimation", "selectElement", "traceSelector", "doubleClick", "rightClick", "hover", "drag", "dragToElement", "selectText", "takeElementScreenshot", "pressKey", "blur", "selectElement"].forEach((srcProp) => {
             const fn = function (...args: any[]) {
                 return _handler[srcProp](...args);
             };
-            dest[srcProp] = fn;
+            
+            Object.defineProperty(dest, srcProp, {
+                get() {
+                    return fn;
+                },
+                configurable: true
+            });
         });
         return dest;
     }
