@@ -337,6 +337,13 @@ export abstract class UI5BaseBuilder<B extends UI5BaseBuilder<B>> extends UI5Par
         return this.thisPointer;
     }
 
+    scrollToInTable() : B {
+        this._id = this._enhanceWith(this._id, {
+            scrollInGridTable: true
+        });
+        return this.thisPointer;
+    }
+
     parentId(id: string): B {
         this._id = this._enhanceWith(this._id, {
             parentAnyLevel: {

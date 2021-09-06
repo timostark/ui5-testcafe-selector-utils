@@ -1553,6 +1553,37 @@ ui5TestCafeSelectorDef.prototype.find = function (id) {
         return [];
     }
 
+    //is our item inside a grid-or tree table?
+    //the sap ui5 way of scrolling is not standard, isntead they are using a separate scroll container, and using margins to show/hide elements
+    if (id.scrollInGridTable === true) {
+        var oCtrl = _wnd.$(aItem[0]).control()[0];
+        var oItem = oCtrl.getParent();
+        while (oItem && oItem.getParent) {
+            if (oItem.getDomRef && oItem.getDomRef()) {
+                if (oItem.getMetadata()._sClassName === "sap.ui.table.Table" || oItem.getMetadata()._sClassName === "sap.ui.table.TreeTable") {
+
+                    //we hav a table --> therefore break afterwards - we have to find our specific row (required e.g. for fixed content)
+                    if (oItem._getScrollExtension() && oItem._getScrollExtension().getHorizontalScrollbar()) {
+                        var oDomNode = oCtrl.getDomRef();
+                        var oParentDomNode = oDomNode.parentNode;
+                        while (oParentDomNode) {
+                            if (_wnd.$(oParentDomNode).hasClass("sapUiTableRow") === true) {
+                                oItem._getScrollExtension().getHorizontalScrollbar().scrollLeft = 0; //reset, so that offset is correct
+                                var iOffsetTable = _wnd.$(oParentDomNode).offset().left;
+                                var iOffsetItem = _wnd.$(oDomNode).offset().left;
+                                oItem._getScrollExtension().getHorizontalScrollbar().scrollLeft = iOffsetItem - iOffsetTable; //reset, so that offset is correct
+                                break;
+                            }
+                            oParentDomNode = oParentDomNode.parentNode;
+                        }
+                        break;
+                    }
+                }
+            }
+            oItem = oItem.getParent();
+        }
+    }
+
     return aItem;
 }
 

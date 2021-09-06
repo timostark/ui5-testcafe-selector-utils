@@ -603,7 +603,6 @@ class ui5ActionDef implements ui5ActionDefIntf {
         await this.expectAny(issuesWithSeverity.length).equal(0, "We are expecting to have no support assistant issue for the severities " + cnfg.failOnSeverity.join(","));
     }
 
-
     private _getSelector(selector: UI5ChainSelection | Selector, step: ui5ActionStep): Selector {
         let iNumber = undefined;
         if (selector instanceof UI5BaseBuilder) {
@@ -882,7 +881,6 @@ class ui5ActionDef implements ui5ActionDefIntf {
         }
         return true;
     }
-
 
     private _delegateAPIToPromise(_handler: any, dest: any) {
         ["click", "typeText", "clearText", "traceSelector", "_getCurrentTestIsLaunchpad", "expectExists", "expectCount", "expectVisible", "expectProperty", "expectAny", "expect", "deactivateAnimation", "selectElement", "traceSelector", "doubleClick", "rightClick", "hover", "drag", "dragToElement", "selectText", "takeElementScreenshot", "pressKey", "blur", "selectElement"].forEach((srcProp) => {
