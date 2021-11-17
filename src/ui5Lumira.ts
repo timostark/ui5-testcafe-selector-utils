@@ -43,9 +43,9 @@ class ui5LumiraDef {
     }
 
     private async login(user: string, pw: string) {
-        await ui5Action.typeText(ui5().domQuery('#_input3-inner'), user)
-            .typeText(ui5().domQuery('#_input4-inner'), pw, { anonymize: true })
-            .click(ui5().domQuery('#_button1'));
+        await ui5Action.typeText(ui5().element('sap.m.Input').positionInAggregation(4), user)
+            .typeText(ui5().element('sap.m.Input').positionInAggregation(5), pw, { anonymize: true })
+            .click(ui5().button().positionInAggregation(5));
 
         //set focus on new iframe
         await t.switchToIframe("#openDocChildFrame");
