@@ -86,6 +86,9 @@ export abstract class UI5ParentBuilder<B extends UI5ParentBuilder<B>> extends UI
     dialog(): B {
         return this.element("sap.m.Dialog");
     }
+    input(): B {
+        return this.element("sap.m.Input");
+    }
     multiInput(): B {
         return this.element("sap.m.MultiInput");
     }
