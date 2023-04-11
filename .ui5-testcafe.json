@@ -20,6 +20,11 @@
             "type": "string",
             "default": ""
         },
+        "queryRunnerUrl": {
+            "description": "Allows you to specify a URL to return the results of a query runner (rest service executing bex queries)",
+            "type": "string",
+            "default": ""
+        },
         "testDataDelFunction": {
             "description": "Allows you to specify a Function Import to be called inside the test data service to delete test data",
             "type": "string",

@@ -6,6 +6,7 @@ import { ui5Coverage } from "./ui5Coverage";
 import { ui5CacheRequestHooks } from "./ui5Cache";
 import { ui5Lumira } from "./ui5Lumira";
 import { ui5TestData } from "./ui5TestData";
+import { ui5QueryParametersQry, ui5QueryRunner } from "./ui5QueryTest";
 
 process.setMaxListeners(0);
 
@@ -37,6 +38,21 @@ export function ui5Fixture(name: string, url: string, category?: string, additio
         .page(urlUse);
 }
 
+export function ui5APITestingFixture(name: string, category?: string, additionalProperties?: ui5FixtureProperties): FixtureFn {
+    return fixture(name)
+        .meta('PRODUCT', category ? category : "")
+        .before(async t => {
+            if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
+                await ui5Proxy.getStartPromise();
+            }
+        })
+        .after(async t => {
+            if (ui5Config.coverage.enabled && ui5Config.coverage.proxy) {
+                await ui5Proxy.logMissingComponents();
+            }
+        });
+}
+
 
 interface BOParameter {
     number: number,
@@ -60,6 +76,14 @@ export interface ui5LaunchpadStartupParams {
     tileDirect ?: boolean;
 }
 
+export interface ui5QueryRunnerTest {
+    description: string,
+    testCase: string,
+    role: UserRole,
+    testData?: string,
+    query: ui5QueryParametersQry;
+}
+
 interface ui5MergedParams {
     description: string,
     testCase: string,
@@ -69,6 +93,8 @@ interface ui5MergedParams {
     tile?: string;
     tileDirect ?: boolean;
     isLaunchpad: boolean;
+    isQueryRunner: boolean;
+    query ?: ui5QueryParametersQry;
     isLumira: boolean;
 }
 
@@ -80,6 +106,7 @@ export function lumiraTest(startup: ui5BOLaunchpadParams, func: (actionDef: ui5A
         role: startup.role,
         isLaunchpad: false,
         isLumira: true,
+        isQueryRunner: false,
         parameter: startup.parameter
     };
     return ui5TestInternal(params, func);
@@ -93,6 +120,7 @@ export function ui5Test(startup: ui5LaunchpadStartupParams, func: (actionDef: ui
         role: startup.role,
         isLaunchpad: true,
         isLumira: false,
+        isQueryRunner: false,
         tile: startup.tile,
         tileDirect: startup.tileDirect
     };
@@ -107,13 +135,28 @@ export function ui5FreestyleTest(startup: ui5LaunchpadStartupParams, func: (acti
         role: startup.role,
         isLaunchpad: false,
         isLumira: false,
+        isQueryRunner: false,
         tile: startup.tile,
         tileDirect: startup.tileDirect
     };
     return ui5TestInternal(params, func);
 };
 
-function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDefIntf, t?: TestController) => Promise<void>): TestFn {
+export function queryRunnerTest(startup: ui5QueryRunnerTest, func: (actionDef: ui5ActionDefIntf, t?: TestController, additionalInfo ?: unknown) => Promise<void>): TestFn {
+    let params: ui5MergedParams = {
+        description: startup.description,
+        testCase: startup.testCase,
+        testData: startup.testData,
+        role: startup.role,
+        isLaunchpad: false,
+        isLumira: false,
+        isQueryRunner: true,
+        query: startup.query
+    };
+    return ui5TestInternal(params, func);
+};
+
+function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDefIntf, t?: TestController, additionalInfo ?: unknown) => Promise<void>): TestFn {
     return test.clientScripts({ path: __dirname + "/clientScripts/client.js" }).after(async t => {
         const { error } = await t.getBrowserConsoleMessages();
         const coverage = await ClientFunction((): any => { return window[<any>"__coverage__"]; })();
@@ -196,6 +239,14 @@ function ui5TestInternal(startup: ui5MergedParams, func: (actionDef: ui5ActionDe
                 testData: startup.testData,
                 parameter: startup.parameter,
             })
+        } else if ( startup.isQueryRunner === true ) {
+            const queryResult = await ui5QueryRunner.runQuery({
+                query: startup.query as ui5QueryParametersQry,
+                role: startup.role,
+                testData: startup.testData
+            });
+            await func(ui5ActionsDefForRun, t, queryResult);
+            return;
         }
         await func(ui5ActionsDefForRun, t);
     });
