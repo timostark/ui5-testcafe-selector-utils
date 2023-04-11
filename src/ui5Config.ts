@@ -29,6 +29,7 @@ export interface ui5Configuration {
     rest?: ui5RestConfiguration;
     launchpad?: ui5LaunchpadConfiguration;
     testDataUrl: string,
+    queryRunnerUrl: string,
     testDataDelFunction: string,
     testDataCreateFunction: string,
     firstSelectorTimeout: number;
@@ -65,6 +66,7 @@ class ui5ConfigDef {
                 firstSelectorTimeout: 60000,
                 tileOpeningTimeout: 60000,
                 testDataUrl: '',
+                queryRunnerUrl: '',
                 testDataDelFunction: '',
                 testDataCreateFunction: '',
 
@@ -83,6 +85,9 @@ class ui5ConfigDef {
         }
         if (typeof this._config.coverage.basePath === "undefined") {
             this._config.coverage.basePath = "";
+        }
+        if (typeof this._config.queryRunnerUrl === "undefined") {
+            this._config.queryRunnerUrl = "";
         }
         if (typeof this._config.testDataUrl === "undefined") {
             this._config.testDataUrl = "";
@@ -125,6 +130,9 @@ class ui5ConfigDef {
         return this._config.logSelectorOnFailure;
     }
 
+    get queryRunnerUrl(): string {
+        return this._config.queryRunnerUrl;
+    }
     get testDataUrl(): string {
         return this._config.testDataUrl;
     }
