@@ -679,8 +679,14 @@ class ui5ActionDef implements ui5ActionDefIntf {
         if ( typeof options.replace === "undefined" ) {
             options.replace = true;
         }
+
+        options.confidential = options.anonymize === true || options.confidential === true ? true: false; 
+        delete options.anonymize;
+
+        const confirm = options.confirm;
+        delete options.confirm;
         
-        let oAction = ui5Steps.addStep(this.t, ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.anonymize ? "******" : text);
+        let oAction = ui5Steps.addStep(this.t, ui5StepType.TYPE_TEXT, ui5StepStatus.QUEUED, selector, options && options.confidential ? "******" : text);
         let oProm = this.t.typeText(this._getSelector(selector, oAction), text, options);
         oProm = this._delegateAPIToPromise(this, oProm);
 
@@ -692,7 +698,7 @@ class ui5ActionDef implements ui5ActionDefIntf {
             ui5Steps.setStepStatus(oAction, ui5StepStatus.FAILED);
         });
 
-        if (options?.confirm === true) {
+        if (confirm === true) {
             return (<any>oProm).pressKey("enter");
         }
 

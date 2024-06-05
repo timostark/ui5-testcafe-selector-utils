@@ -209,7 +209,7 @@ export let ui5CacheWriteMock = RequestMock()
         }
 
         //use in mem cache from chrome after second loading..
-        if (CacheBuffer.exists(req.url)) {
+        if (CacheBuffer.exists(req.url as string)) {
             return true;
         }
 
@@ -217,12 +217,12 @@ export let ui5CacheWriteMock = RequestMock()
     })
     .respond(async (req: RequestOptions, res: ResponseMock) => {
         return new Promise((resolve) => {
-            CacheBuffer.readFile(req.url).then((data) => {
+            CacheBuffer.readFile(req.url as string).then((data) => {
                 res.setBody(<any>data.data);
                 if (data.dataHeader) {
                     res.headers = JSON.parse(data.dataHeader.toString());
                 }
-                resolve(true);
+                resolve(true as unknown as void);
             })
         });
     });
