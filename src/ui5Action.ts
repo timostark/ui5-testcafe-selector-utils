@@ -352,8 +352,8 @@ interface ui5ActionDefIntf {
     drag(selector: UI5ChainSelection | Selector, dragOffsetX: number, dragOffsetY: number, options?: MouseActionOptions): ui5ActionDefPromise;
     hover(selector: UI5ChainSelection | Selector, options?: MouseActionOptions): ui5ActionDefPromise;
     doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise;
-    selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise;
-    selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise;
+    selectElement(selectorParent: UI5ChainSelection, positionInAggregation: number, withType ?: boolean): ui5ActionDefPromise;
+    selectElementByText(selectorParent: UI5ChainSelection, title: string): ui5ActionDefPromise;
     selectElementByIndex(selectorParent: UI5ChainSelection, index: number): ui5ActionDefPromise;
 
     typeText(selector: UI5ChainSelection | Selector, text: string, options?: UI5TypeActionOptions): ui5ActionDefPromise;
@@ -435,11 +435,11 @@ class ui5ActionProxyDef implements ui5ActionDefIntf {
     public doubleClick(selector: UI5ChainSelection | Selector, options?: ClickActionOptions): ui5ActionDefPromise {
         return this.getRunDef().doubleClick(selector, options);
     }
-    public selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise {
-        return this.getRunDef().selectElement(selectorParent, key, withType);
+    public selectElement(selectorParent: UI5ChainSelection, positionInAggregation: number, withType ?: boolean): ui5ActionDefPromise {
+        return this.getRunDef().selectElement(selectorParent, positionInAggregation, withType);
     }
-    public selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise {
-        return this.getRunDef().selectElementByText(selectorParent, text);
+    public selectElementByText(selectorParent: UI5ChainSelection, title: string): ui5ActionDefPromise {
+        return this.getRunDef().selectElementByText(selectorParent, title);
     }
     public selectElementByIndex(selectorParent: UI5ChainSelection, index: number): ui5ActionDefPromise {
         return this.getRunDef().selectElementByIndex(selectorParent, index);
@@ -710,20 +710,20 @@ class ui5ActionDef implements ui5ActionDefIntf {
             click(ui5().parent(selectorParent.clone()).insideATable(iIndex));
     }
 
-    public selectElementByText(selectorParent: UI5ChainSelection, text: string): ui5ActionDefPromise {
+    public selectElementByText(selectorParent: UI5ChainSelection, title: string): ui5ActionDefPromise {
         return this.click(selectorParent.clone().comboBox().arrow()).
-            click(ui5().parent(selectorParent.clone()).itemdata("text", text));
+            click(ui5().parent(selectorParent.clone()).property("title", title));
     }
 
-    public selectElement(selectorParent: UI5ChainSelection, key: string, withType ?: boolean): ui5ActionDefPromise {
+    public selectElement(selectorParent: UI5ChainSelection, positionInAggregation: number, withType ?: boolean): ui5ActionDefPromise {
         if ( withType === true ) {
             return this.
                 click(selectorParent.clone().comboBox().arrow()).
-                typeText(selectorParent.clone().comboBox(), key).
-                click(ui5().parent(selectorParent.clone()).itemdata("key", key));
+                typeText(selectorParent.clone().comboBox(), positionInAggregation.toString()).
+                click(ui5().parent(selectorParent.clone()).positionInAggregation(positionInAggregation));
         } else {
             return this.click(selectorParent.clone().comboBox().arrow()).
-                click(ui5().parent(selectorParent.clone()).itemdata("key", key));
+                click(ui5().parent(selectorParent.clone()).positionInAggregation(positionInAggregation));
         }
     }
 
