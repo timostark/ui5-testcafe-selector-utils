@@ -11,7 +11,7 @@ class ui5WaiterDef {
     async waitForLaunchpadToBeLoaded() {
         //very very bad style - i do not really find an event, which is saying "i am done" - this is the closest i can get
         //this document is called duringstartup
-        await ui5Action.expectExists(ui5().domQuery("#shell-floatingContainer")).ok("Wait for Launchpad to be loaded failed", { timeout: ui5Config.tileOpeningTimeout });
+        await ui5Action.expectExists(ui5().domQuery("#floatingContainer-shellArea")).ok("Wait for Launchpad to be loaded failed", { timeout: ui5Config.tileOpeningTimeout });
     }
 }
 
